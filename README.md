@@ -1,35 +1,31 @@
-
 # Tennis Tabellen Simulator
 
-OCR-basierte Tennis-Tabellen-Simulation für WTV / nuLiga.
+Mobile-optimierter WTV/nuLiga Tabellen-Simulator.
 
 ## Funktionen
 
-- Screenshot hochladen
-- OCR-Erkennung via Tesseract.js
-- Tabellen automatisch erkennen
-- Spieltage simulieren
-- Neue Tabellenposition berechnen
-- React + Vite
-- Direkt GitHub-fähig
+- Screenshot-Upload direkt auf dem iPhone
+- OCR via Tesseract.js im Browser
+- auf WTV/nuLiga-Tabellenlayout vorbereitet
+- Korrekturmaske für erkannte Werte
+- Simulation des nächsten Spieltags
+- Sortierung nach Punkten, Matches, Sätzen und Games
+- Direkter Vergleich als einfache Abfrage bei Punktgleichheit
+- GitHub Pages kompatibel
 
-## Installation
+## Lokal starten
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Build
+## GitHub Pages
 
-```bash
-npm run build
+Repository-Name: `table-simulator`
+
+Die Datei `vite.config.js` enthält bereits:
+
+```js
+base: '/table-simulator/'
 ```
-
-## Geplante Erweiterungen
-
-- Direkter Vergleich
-- Satz- und Spielwertung
-- nuLiga API
-- Automatische Tabellenstruktur-Erkennung
-- Mobile Optimierung
