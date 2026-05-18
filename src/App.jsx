@@ -1,264 +1,367 @@
-
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Tesseract from 'tesseract.js'
 
-function App() {
-  const [ocrText, setOcrText] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [teams, setTeams] = useState([])
-  const [matches, setMatches] = useState([
-    { home: '', away: '', result: '6:3' }
-  ])
+const initialTeams = [
+  { name: 'Lüdenscheider TV 1899 1', played: 2, wins: 2, draws: 0, losses: 0, leaguePointsWon: 2, leaguePointsLost: 0, matchesWon: 13, matchesLost: 5, setsWon: 29, setsLost: 12, gamesWon: 186, gamesLost: 100 },
+  { name: 'TC RW Siedlinghausen 1', played: 2, wins: 2, draws: 0, losses: 0, leaguePointsWon: 2, leaguePointsLost: 0, matchesWon: 10, matchesLost: 8, setsWon: 23, setsLost: 21, gamesWon: 167, gamesLost: 158 },
+  { name: 'Siegener SC 07/09 1', played: 2, wins: 1, draws: 0, losses: 1, leaguePointsWon: 1, leaguePointsLost: 1, matchesWon: 10, matchesLost: 8, setsWon: 24, setsLost: 19, gamesWon: 175, gamesLost: 137 },
+  { name: 'TV Eiserfeld 74 1', played: 2, wins: 1, draws: 0, losses: 1, leaguePointsWon: 1, leaguePointsLost: 1, matchesWon: 9, matchesLost: 9, setsWon: 21, setsLost: 20, gamesWon: 162, gamesLost: 152 },
+  { name: 'SuS Stemel 1', played: 1, wins: 0, draws: 0, losses: 1, leaguePointsWon: 0, leaguePointsLost: 1, matchesWon: 3, matchesLost: 6, setsWon: 7, setsLost: 13, gamesWon: 60, gamesLost: 92 },
+  { name: 'TuS Ferndorf 1', played: 1, wins: 0, draws: 0, losses: 1, leaguePointsWon: 0, leaguePointsLost: 1, matchesWon: 3, matchesLost: 6, setsWon: 7, setsLost: 14, gamesWon: 56, gamesLost: 94 },
+  { name: 'TC Wiesental Herscheid 1', played: 2, wins: 0, draws: 0, losses: 2, leaguePointsWon: 0, leaguePointsLost: 2, matchesWon: 6, matchesLost: 12, setsWon: 14, setsLost: 26, gamesWon: 106, gamesLost: 179 }
+]
 
-  async function handleImage(e) {
-    const file = e.target.files[0]
+const initialFixtures = [
+  { date: '30.05.2026 11:00', home: 'TC RW Siedlinghausen 1', away: 'SuS Stemel 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '30.05.2026 13:00', home: 'Lüdenscheider TV 1899 1', away: 'TV Eiserfeld 74 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '30.05.2026 13:00', home: 'TuS Ferndorf 1', away: 'Siegener SC 07/09 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '13.06.2026 13:00', home: 'TC Wiesental Herscheid 1', away: 'TC RW Siedlinghausen 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '13.06.2026 13:00', home: 'TV Eiserfeld 74 1', away: 'Siegener SC 07/09 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '13.06.2026 14:30', home: 'SuS Stemel 1', away: 'TuS Ferndorf 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '20.06.2026 13:00', home: 'TuS Ferndorf 1', away: 'TV Eiserfeld 74 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '20.06.2026 13:00', home: 'SuS Stemel 1', away: 'Lüdenscheider TV 1899 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '20.06.2026 13:00', home: 'Siegener SC 07/09 1', away: 'TC Wiesental Herscheid 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '27.06.2026 11:00', home: 'TC RW Siedlinghausen 1', away: 'Lüdenscheider TV 1899 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '27.06.2026 13:00', home: 'TC Wiesental Herscheid 1', away: 'TuS Ferndorf 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '28.06.2026 10:00', home: 'TV Eiserfeld 74 1', away: 'SuS Stemel 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '11.07.2026 09:30', home: 'SuS Stemel 1', away: 'TC Wiesental Herscheid 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '11.07.2026 11:00', home: 'TC RW Siedlinghausen 1', away: 'TuS Ferndorf 1', result: '', sets: '', games: '', note: 'offen' },
+  { date: '11.07.2026 13:00', home: 'Lüdenscheider TV 1899 1', away: 'Siegener SC 07/09 1', result: '', sets: '', games: '', note: 'offen' }
+]
+
+function pair(text) {
+  const m = String(text || '').replace(/\s/g, '').match(/(\d+)\s*[:;]\s*(\d+)/)
+  return m ? [Number(m[1]), Number(m[2])] : [0, 0]
+}
+
+function ratio(won, lost) {
+  return `${won}:${lost}`
+}
+
+function sortTeams(list, direct) {
+  return [...list].sort((a, b) => {
+    if (b.leaguePointsWon !== a.leaguePointsWon) return b.leaguePointsWon - a.leaguePointsWon
+
+    const keyAB = `${a.name}__${b.name}`
+    const keyBA = `${b.name}__${a.name}`
+    if (direct[keyAB] === 'a') return -1
+    if (direct[keyAB] === 'b') return 1
+    if (direct[keyBA] === 'a') return 1
+    if (direct[keyBA] === 'b') return -1
+
+    const mdA = a.matchesWon - a.matchesLost
+    const mdB = b.matchesWon - b.matchesLost
+    if (mdB !== mdA) return mdB - mdA
+    if (b.matchesWon !== a.matchesWon) return b.matchesWon - a.matchesWon
+
+    const sdA = a.setsWon - a.setsLost
+    const sdB = b.setsWon - b.setsLost
+    if (sdB !== sdA) return sdB - sdA
+    if (b.setsWon !== a.setsWon) return b.setsWon - a.setsWon
+
+    const gdA = a.gamesWon - a.gamesLost
+    const gdB = b.gamesWon - b.gamesLost
+    if (gdB !== gdA) return gdB - gdA
+    return b.gamesWon - a.gamesWon
+  }).map((t, i) => ({ ...t, rank: i + 1 }))
+}
+
+function normalizeLine(line) {
+  return line.replace(/\s+/g, ' ').replace(/[|]/g, ' ').trim()
+}
+
+function parseTableFromOcr(text) {
+  const lines = text.split('\n').map(normalizeLine).filter(Boolean)
+  const teams = []
+
+  for (const line of lines) {
+    const pairs = [...line.matchAll(/(\d+)\s*[:;]\s*(\d+)/g)].map(x => [Number(x[1]), Number(x[2])])
+    if (pairs.length < 4) continue
+
+    const prefix = line.match(/^\D*(\d+)\s+(.+?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+/)
+    if (!prefix) continue
+
+    const name = prefix[2].trim()
+    if (/rang|mannschaft|begegnungen|spielplan|datum/i.test(name)) continue
+
+    teams.push({
+      name,
+      played: Number(prefix[3]),
+      wins: Number(prefix[4]),
+      draws: Number(prefix[5]),
+      losses: Number(prefix[6]),
+      leaguePointsWon: pairs[0][0],
+      leaguePointsLost: pairs[0][1],
+      matchesWon: pairs[1][0],
+      matchesLost: pairs[1][1],
+      setsWon: pairs[2][0],
+      setsLost: pairs[2][1],
+      gamesWon: pairs[3][0],
+      gamesLost: pairs[3][1]
+    })
+  }
+
+  return teams.length >= 4 ? teams : initialTeams
+}
+
+function findTeamInText(text, teams) {
+  const cleaned = text.toLowerCase()
+  return teams.find(t => cleaned.includes(t.name.toLowerCase()))
+}
+
+function parseFixturesFromOcr(text, teams) {
+  const lines = text.split('\n').map(normalizeLine).filter(Boolean)
+  const fixtures = []
+  const known = teams.map(t => t.name)
+
+  for (const line of lines) {
+    if (!/offen|ursprünglich/i.test(line)) continue
+
+    const found = known.filter(team => line.toLowerCase().includes(team.toLowerCase()))
+    if (found.length >= 2) {
+      const dateMatch = line.match(/(\d{2}\.\d{2}\.\d{4}(?:\s+\d{1,2}:\d{2})?)/)
+      fixtures.push({
+        date: dateMatch ? dateMatch[1] : '',
+        home: found[0],
+        away: found[1],
+        result: '',
+        sets: '',
+        games: '',
+        note: 'offen'
+      })
+    }
+  }
+
+  return fixtures.length ? fixtures : initialFixtures
+}
+
+function fixtureDayKey(date) {
+  const m = String(date || '').match(/\d{2}\.\d{2}\.\d{4}/)
+  return m ? m[0] : 'ohne Datum'
+}
+
+function App() {
+  const [teams, setTeams] = useState(initialTeams)
+  const [fixtures, setFixtures] = useState(initialFixtures)
+  const [selectedDay, setSelectedDay] = useState('30.05.2026')
+  const [ocrText, setOcrText] = useState('')
+  const [status, setStatus] = useState('Screenshot mit Tabelle und Spielplan hochladen.')
+  const [direct, setDirect] = useState({})
+
+  const sortedTeams = useMemo(() => sortTeams(teams, direct), [teams, direct])
+  const days = useMemo(() => [...new Set(fixtures.map(fixture => fixtureDayKey(fixture.date)))], [fixtures])
+  const visibleFixtures = fixtures.filter(f => selectedDay === 'alle' || fixtureDayKey(f.date) === selectedDay)
+
+  const tieGroups = useMemo(() => {
+    const groups = {}
+    sortedTeams.forEach(team => {
+      groups[team.leaguePointsWon] ||= []
+      groups[team.leaguePointsWon].push(team)
+    })
+    return Object.values(groups).filter(g => g.length > 1)
+  }, [sortedTeams])
+
+  async function handleImage(event) {
+    const file = event.target.files?.[0]
     if (!file) return
 
-    setLoading(true)
+    setStatus('OCR läuft. Auf dem iPhone kann das etwas dauern.')
 
-    const result = await Tesseract.recognize(file, 'deu')
-
-    setOcrText(result.data.text)
-
-    const parsed = parseTable(result.data.text)
-
-    setTeams(parsed)
-
-    setLoading(false)
-  }
-
-  function parseTable(text) {
-    const lines = text
-      .split('\n')
-      .map(x => x.trim())
-      .filter(x => x.length > 5)
-
-    const parsedTeams = []
-
-    for (const line of lines) {
-      const regex = /^(\d+)\s+([A-Za-z0-9\s\-\./äöüÄÖÜ]+)\s+(\d+)\s+(\d+:\d+)/
-      const match = line.match(regex)
-
-      if (match) {
-        const teamName = match[2].trim()
-        const points = match[4]
-
-        const [won, lost] = points.split(':').map(Number)
-
-        parsedTeams.push({
-          name: teamName,
-          pointsWon: won,
-          pointsLost: lost,
-          tablePoints: won * 2,
-          diff: won - lost
-        })
-      }
-    }
-
-    if (parsedTeams.length === 0) {
-      return [
-        {
-          name: 'TC Siedlinghausen',
-          pointsWon: 30,
-          pointsLost: 15,
-          tablePoints: 8,
-          diff: 15
-        },
-        {
-          name: 'Siegener SC',
-          pointsWon: 27,
-          pointsLost: 18,
-          tablePoints: 6,
-          diff: 9
+    const result = await Tesseract.recognize(file, 'deu', {
+      logger: message => {
+        if (message.status === 'recognizing text') {
+          setStatus(`OCR läuft: ${Math.round((message.progress || 0) * 100)} %`)
         }
-      ]
-    }
+      }
+    })
 
-    return parsedTeams
+    const text = result.data.text
+    const parsedTeams = parseTableFromOcr(text)
+    const parsedFixtures = parseFixturesFromOcr(text, parsedTeams)
+    const parsedDays = [...new Set(parsedFixtures.map(f => fixtureDayKey(f.date)))]
+
+    setOcrText(text)
+    setTeams(parsedTeams)
+    setFixtures(parsedFixtures)
+    setSelectedDay(parsedDays[0] || 'alle')
+    setStatus(`Erkannt: ${parsedTeams.length} Teams, ${parsedFixtures.length} offene Spiele.`)
   }
 
-  function addMatch() {
-    setMatches([
-      ...matches,
-      { home: '', away: '', result: '6:3' }
-    ])
-  }
-
-  function updateMatch(index, key, value) {
-    const clone = [...matches]
-    clone[index][key] = value
-    setMatches(clone)
+  function updateFixture(index, field, value) {
+    const globalIndex = fixtures.findIndex((fixture, i) => visibleFixtures[index] === fixture)
+    const copy = [...fixtures]
+    copy[globalIndex] = { ...copy[globalIndex], [field]: value }
+    setFixtures(copy)
   }
 
   function simulate() {
-    const updated = [...teams]
+    const updated = teams.map(team => ({ ...team }))
+    const selectedFixtures = fixtures.filter(f => f.result && (selectedDay === 'alle' || fixtureDayKey(f.date) === selectedDay))
 
-    matches.forEach(match => {
-      const home = updated.find(t => t.name === match.home)
-      const away = updated.find(t => t.name === match.away)
-
+    selectedFixtures.forEach(fixture => {
+      const home = updated.find(t => t.name === fixture.home)
+      const away = updated.find(t => t.name === fixture.away)
       if (!home || !away) return
 
-      const [h, a] = match.result.split(':').map(Number)
+      const [hm, am] = pair(fixture.result)
+      const [hs, ass] = pair(fixture.sets)
+      const [hg, ag] = pair(fixture.games)
 
-      home.pointsWon += h
-      home.pointsLost += a
-      home.diff = home.pointsWon - home.pointsLost
+      home.played += 1
+      away.played += 1
 
-      away.pointsWon += a
-      away.pointsLost += h
-      away.diff = away.pointsWon - away.pointsLost
+      home.matchesWon += hm
+      home.matchesLost += am
+      away.matchesWon += am
+      away.matchesLost += hm
 
-      if (h > a) {
-        home.tablePoints += 2
+      if (fixture.sets) {
+        home.setsWon += hs
+        home.setsLost += ass
+        away.setsWon += ass
+        away.setsLost += hs
+      }
+
+      if (fixture.games) {
+        home.gamesWon += hg
+        home.gamesLost += ag
+        away.gamesWon += ag
+        away.gamesLost += hg
+      }
+
+      if (hm > am) {
+        home.wins += 1
+        away.losses += 1
+        home.leaguePointsWon += 1
+        away.leaguePointsLost += 1
+      } else if (am > hm) {
+        away.wins += 1
+        home.losses += 1
+        away.leaguePointsWon += 1
+        home.leaguePointsLost += 1
       } else {
-        away.tablePoints += 2
+        home.draws += 1
+        away.draws += 1
       }
     })
 
-    updated.sort((a, b) => {
-      if (b.tablePoints !== a.tablePoints) {
-        return b.tablePoints - a.tablePoints
-      }
+    setTeams(sortTeams(updated, direct))
+    setStatus(`${selectedFixtures.length} Begegnungen simuliert.`)
+  }
 
-      if (b.diff !== a.diff) {
-        return b.diff - a.diff
-      }
-
-      return b.pointsWon - a.pointsWon
-    })
-
-    updated.forEach((t, i) => {
-      t.rank = i + 1
-    })
-
-    setTeams(updated)
+  function resetDemo() {
+    setTeams(initialTeams)
+    setFixtures(initialFixtures)
+    setSelectedDay('30.05.2026')
+    setDirect({})
+    setStatus('Demo-Daten geladen.')
   }
 
   return (
-    <div className="container">
-      <div className="title">🎾 Tennis Tabellen Simulator</div>
-      <div className="subtitle">
-        Screenshot hochladen → OCR erkennt Tabelle → nächsten Spieltag simulieren
-      </div>
+    <main className="app">
+      <section className="top">
+        <div>
+          <p className="label">WTV / nuLiga</p>
+          <h1>Tabellenrechner</h1>
+          <p className="sub">Screenshot mit Tabelle + Spielplan hochladen. Danach nur die offenen Ergebnisse eintragen.</p>
+        </div>
+      </section>
 
-      <div className="card">
-        <div className="upload-box">
+      <section className="panel uploadPanel">
+        <label className="uploadButton">
+          Screenshot hochladen
           <input type="file" accept="image/*" onChange={handleImage} />
+        </label>
+        <button className="ghost" onClick={resetDemo}>Demo laden</button>
+        <p className="status">{status}</p>
+      </section>
 
-          {loading && (
-            <p>OCR läuft... Screenshot wird analysiert.</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid">
-        <div className="card">
-          <h2>OCR Rohtext</h2>
-
-          <textarea
-            value={ocrText}
-            onChange={(e) => setOcrText(e.target.value)}
-          />
+      <section className="panel">
+        <div className="head">
+          <h2>Spieltag simulieren</h2>
+          <select value={selectedDay} onChange={e => setSelectedDay(e.target.value)}>
+            {days.map(day => <option key={day} value={day}>{day}</option>)}
+            <option value="alle">alle offenen Spiele</option>
+          </select>
         </div>
 
-        <div className="card">
-          <h2>Nächster Spieltag</h2>
+        <div className="fixtureList">
+          {visibleFixtures.map((fixture, index) => (
+            <article className="fixtureCard" key={`${fixture.home}-${fixture.away}-${index}`}>
+              <div className="date">{fixture.date || 'offen'}</div>
+              <div className="teams">
+                <strong>{fixture.home}</strong>
+                <span>gegen</span>
+                <strong>{fixture.away}</strong>
+              </div>
+              <div className="resultGrid">
+                <input inputMode="numeric" placeholder="Matches 6:3" value={fixture.result} onChange={e => updateFixture(index, 'result', e.target.value)} />
+                <input inputMode="numeric" placeholder="Sätze optional" value={fixture.sets} onChange={e => updateFixture(index, 'sets', e.target.value)} />
+                <input inputMode="numeric" placeholder="Games optional" value={fixture.games} onChange={e => updateFixture(index, 'games', e.target.value)} />
+              </div>
+            </article>
+          ))}
+        </div>
 
-          {matches.map((match, index) => (
-            <div
-              key={index}
-              style={{
-                display: 'flex',
-                gap: '10px',
-                marginBottom: '10px',
-                flexWrap: 'wrap'
-              }}
-            >
-              <select
-                value={match.home}
-                onChange={(e) => updateMatch(index, 'home', e.target.value)}
-              >
-                <option value="">Heim</option>
+        <button className="primary" onClick={simulate}>Diesen Spieltag berechnen</button>
+      </section>
 
-                {teams.map(team => (
-                  <option key={team.name}>{team.name}</option>
-                ))}
-              </select>
+      <section className="panel">
+        <div className="head">
+          <h2>Neue Tabelle</h2>
+          <span>{sortedTeams.length} Teams</span>
+        </div>
 
-              <select
-                value={match.away}
-                onChange={(e) => updateMatch(index, 'away', e.target.value)}
-              >
-                <option value="">Gast</option>
+        <div className="teamCards">
+          {sortedTeams.map((team, index) => (
+            <article className="teamCard" key={team.name}>
+              <div className="rank">{index + 1}</div>
+              <div className="teamMain">
+                <h3>{team.name}</h3>
+                <div className="stats">
+                  <span>Punkte <b>{ratio(team.leaguePointsWon, team.leaguePointsLost)}</b></span>
+                  <span>Matches <b>{ratio(team.matchesWon, team.matchesLost)}</b></span>
+                  <span>Sätze <b>{ratio(team.setsWon, team.setsLost)}</b></span>
+                  <span>Games <b>{ratio(team.gamesWon, team.gamesLost)}</b></span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
-                {teams.map(team => (
-                  <option key={team.name}>{team.name}</option>
-                ))}
-              </select>
+      {tieGroups.length > 0 && (
+        <section className="panel">
+          <div className="head">
+            <h2>Direkter Vergleich</h2>
+            <span>bei Punktgleichheit</span>
+          </div>
 
-              <input
-                value={match.result}
-                onChange={(e) => updateMatch(index, 'result', e.target.value)}
-              />
+          {tieGroups.map(group => (
+            <div className="directGroup" key={group.map(t => t.name).join('')}>
+              {group.flatMap((a, i) => group.slice(i + 1).map(b => {
+                const key = `${a.name}__${b.name}`
+                return (
+                  <div className="directRow" key={key}>
+                    <p>{a.name}<br /><small>gegen</small><br />{b.name}</p>
+                    <select value={direct[key] || ''} onChange={e => setDirect({ ...direct, [key]: e.target.value })}>
+                      <option value="">nicht festlegen</option>
+                      <option value="a">{a.name} vorne</option>
+                      <option value="b">{b.name} vorne</option>
+                    </select>
+                  </div>
+                )
+              }))}
             </div>
           ))}
+        </section>
+      )}
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-            <button onClick={addMatch}>
-              + Weiteres Spiel
-            </button>
-
-            <button onClick={simulate}>
-              Tabelle simulieren
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="card">
-        <h2>Berechnete Tabelle</h2>
-
-        <table>
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Mannschaft</th>
-              <th>Tabellenpunkte</th>
-              <th>Matchpunkte</th>
-              <th>Differenz</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {teams.map((team, index) => (
-              <tr key={team.name}>
-                <td>{index + 1}</td>
-                <td>{team.name}</td>
-                <td>{team.tablePoints}</td>
-                <td>{team.pointsWon}:{team.pointsLost}</td>
-                <td className={team.diff >= 0 ? 'green' : 'red'}>
-                  {team.diff >= 0 ? '+' : ''}{team.diff}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="card">
-        <h2>Geplante Erweiterungen</h2>
-
-        <ul>
-          <li>Direkter Vergleich bei Punktgleichheit</li>
-          <li>Automatische nuLiga/WTV-Erkennung</li>
-          <li>Satz- und Spielwertung</li>
-          <li>Best/Worst-Case-Rechner</li>
-          <li>Live-Tabelle während des Spieltags</li>
-          <li>Import direkt per Tabellen-Link</li>
-        </ul>
-      </div>
-    </div>
+      <details className="panel">
+        <summary>OCR-Rohtext / Fehleranalyse</summary>
+        <textarea value={ocrText} onChange={e => setOcrText(e.target.value)} />
+      </details>
+    </main>
   )
 }
 
