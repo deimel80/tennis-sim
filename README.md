@@ -1,17 +1,9 @@
 # Tennis Tabellenrechner
 
-Mobile-optimierter Tabellenrechner für WTV/nuLiga.
+Version 2.2
 
-## Version 2.1
-
-- Ergebnis-Schnellbuttons 9:0 bis 0:9
-- iPhone-Eingabe erlaubt jetzt Doppelpunkt
-- Berechnung setzt sauber auf der ursprünglichen Tabelle auf
-- Zurücksetzen-Button ergänzt
-
-## Start
-
-```bash
-npm install
-npm run dev
-```
+- Kein automatischer Demo-Fallback mehr nach Upload
+- Wenn Spielplan nicht erkannt wird, bleibt die Spielplanliste leer
+- Spiele können manuell ergänzt werden
+- Teams kommen aus der erkannten Tabelle
+- iPhone-fähige Ergebnisbuttons
