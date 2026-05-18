@@ -29,9 +29,16 @@ const initialFixtures = [
   { date: '11.07.2026 13:00', home: 'Lüdenscheider TV 1899 1', away: 'Siegener SC 07/09 1', result: '', sets: '', games: '', note: 'offen' }
 ]
 
+const quickResults = ['9:0', '8:1', '7:2', '6:3', '5:4', '4:5', '3:6', '2:7', '1:8', '0:9']
+
 function pair(text) {
-  const m = String(text || '').replace(/\s/g, '').match(/(\d+)\s*[:;]\s*(\d+)/)
-  return m ? [Number(m[1]), Number(m[2])] : [0, 0]
+  const normalized = String(text || '')
+    .replace(/\s/g, '')
+    .replace('-', ':')
+    .replace('/', ':')
+    .replace(';', ':')
+  const m = normalized.match(/^(\d+):(\d+)$/)
+  return m ? [Number(m[1]), Number(m[2])] : null
 }
 
 function ratio(won, lost) {
@@ -104,11 +111,6 @@ function parseTableFromOcr(text) {
   return teams.length >= 4 ? teams : initialTeams
 }
 
-function findTeamInText(text, teams) {
-  const cleaned = text.toLowerCase()
-  return teams.find(t => cleaned.includes(t.name.toLowerCase()))
-}
-
 function parseFixturesFromOcr(text, teams) {
   const lines = text.split('\n').map(normalizeLine).filter(Boolean)
   const fixtures = []
@@ -141,6 +143,7 @@ function fixtureDayKey(date) {
 }
 
 function App() {
+  const [baseTeams, setBaseTeams] = useState(initialTeams)
   const [teams, setTeams] = useState(initialTeams)
   const [fixtures, setFixtures] = useState(initialFixtures)
   const [selectedDay, setSelectedDay] = useState('30.05.2026')
@@ -181,22 +184,26 @@ function App() {
     const parsedDays = [...new Set(parsedFixtures.map(f => fixtureDayKey(f.date)))]
 
     setOcrText(text)
+    setBaseTeams(parsedTeams)
     setTeams(parsedTeams)
     setFixtures(parsedFixtures)
     setSelectedDay(parsedDays[0] || 'alle')
     setStatus(`Erkannt: ${parsedTeams.length} Teams, ${parsedFixtures.length} offene Spiele.`)
   }
 
-  function updateFixture(index, field, value) {
-    const globalIndex = fixtures.findIndex((fixture, i) => visibleFixtures[index] === fixture)
-    const copy = [...fixtures]
-    copy[globalIndex] = { ...copy[globalIndex], [field]: value }
-    setFixtures(copy)
+  function updateFixtureById(targetFixture, field, value) {
+    setFixtures(current => current.map(fixture => {
+      if (fixture !== targetFixture) return fixture
+      return { ...fixture, [field]: value }
+    }))
   }
 
   function simulate() {
-    const updated = teams.map(team => ({ ...team }))
-    const selectedFixtures = fixtures.filter(f => f.result && (selectedDay === 'alle' || fixtureDayKey(f.date) === selectedDay))
+    const updated = baseTeams.map(team => ({ ...team }))
+    const selectedFixtures = fixtures.filter(f => {
+      const dayMatches = selectedDay === 'alle' || fixtureDayKey(f.date) === selectedDay
+      return dayMatches && pair(f.result)
+    })
 
     selectedFixtures.forEach(fixture => {
       const home = updated.find(t => t.name === fixture.home)
@@ -204,8 +211,8 @@ function App() {
       if (!home || !away) return
 
       const [hm, am] = pair(fixture.result)
-      const [hs, ass] = pair(fixture.sets)
-      const [hg, ag] = pair(fixture.games)
+      const setPair = pair(fixture.sets)
+      const gamePair = pair(fixture.games)
 
       home.played += 1
       away.played += 1
@@ -215,14 +222,16 @@ function App() {
       away.matchesWon += am
       away.matchesLost += hm
 
-      if (fixture.sets) {
+      if (setPair) {
+        const [hs, ass] = setPair
         home.setsWon += hs
         home.setsLost += ass
         away.setsWon += ass
         away.setsLost += hs
       }
 
-      if (fixture.games) {
+      if (gamePair) {
+        const [hg, ag] = gamePair
         home.gamesWon += hg
         home.gamesLost += ag
         away.gamesWon += ag
@@ -246,15 +255,21 @@ function App() {
     })
 
     setTeams(sortTeams(updated, direct))
-    setStatus(`${selectedFixtures.length} Begegnungen simuliert.`)
+    setStatus(selectedFixtures.length ? `${selectedFixtures.length} Begegnungen simuliert.` : 'Kein gültiges Ergebnis eingetragen. Nutze z. B. 6:3 oder den Schnellbutton.')
   }
 
   function resetDemo() {
+    setBaseTeams(initialTeams)
     setTeams(initialTeams)
     setFixtures(initialFixtures)
     setSelectedDay('30.05.2026')
     setDirect({})
     setStatus('Demo-Daten geladen.')
+  }
+
+  function resetSimulation() {
+    setTeams(baseTeams)
+    setStatus('Simulation zurückgesetzt.')
   }
 
   return (
@@ -263,7 +278,7 @@ function App() {
         <div>
           <p className="label">WTV / nuLiga</p>
           <h1>Tabellenrechner</h1>
-          <p className="sub">Screenshot mit Tabelle + Spielplan hochladen. Danach nur die offenen Ergebnisse eintragen.</p>
+          <p className="sub">Screenshot mit Tabelle + Spielplan hochladen. Danach nur die Ergebnisse der offenen Spiele wählen.</p>
         </div>
       </section>
 
@@ -294,16 +309,48 @@ function App() {
                 <span>gegen</span>
                 <strong>{fixture.away}</strong>
               </div>
+
+              <div className="quickGrid">
+                {quickResults.map(result => (
+                  <button
+                    type="button"
+                    className={fixture.result === result ? 'quick active' : 'quick'}
+                    key={result}
+                    onClick={() => updateFixtureById(fixture, 'result', result)}
+                  >
+                    {result}
+                  </button>
+                ))}
+              </div>
+
               <div className="resultGrid">
-                <input inputMode="numeric" placeholder="Matches 6:3" value={fixture.result} onChange={e => updateFixture(index, 'result', e.target.value)} />
-                <input inputMode="numeric" placeholder="Sätze optional" value={fixture.sets} onChange={e => updateFixture(index, 'sets', e.target.value)} />
-                <input inputMode="numeric" placeholder="Games optional" value={fixture.games} onChange={e => updateFixture(index, 'games', e.target.value)} />
+                <input
+                  inputMode="text"
+                  placeholder="Matches z. B. 6:3"
+                  value={fixture.result}
+                  onChange={e => updateFixtureById(fixture, 'result', e.target.value)}
+                />
+                <input
+                  inputMode="text"
+                  placeholder="Sätze optional"
+                  value={fixture.sets}
+                  onChange={e => updateFixtureById(fixture, 'sets', e.target.value)}
+                />
+                <input
+                  inputMode="text"
+                  placeholder="Games optional"
+                  value={fixture.games}
+                  onChange={e => updateFixtureById(fixture, 'games', e.target.value)}
+                />
               </div>
             </article>
           ))}
         </div>
 
-        <button className="primary" onClick={simulate}>Diesen Spieltag berechnen</button>
+        <div className="actionGrid">
+          <button className="ghost" onClick={resetSimulation}>Zurücksetzen</button>
+          <button className="primary" onClick={simulate}>Diesen Spieltag berechnen</button>
+        </div>
       </section>
 
       <section className="panel">

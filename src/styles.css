@@ -166,10 +166,41 @@ textarea {
   font-size: 13px;
 }
 
+.quickGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.quick {
+  min-height: 42px;
+  border: 1px solid #e5e7eb;
+  border-radius: 13px;
+  background: white;
+  color: #111827;
+  font-weight: 950;
+  box-shadow: none;
+  padding: 8px;
+}
+
+.quick.active {
+  background: #dc2626;
+  color: white;
+  border-color: #dc2626;
+}
+
 .resultGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
+}
+
+.actionGrid {
+  display: grid;
+  grid-template-columns: .8fr 1.2fr;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .primary,
@@ -183,8 +214,6 @@ textarea {
 }
 
 .primary {
-  width: 100%;
-  margin-top: 14px;
   background: #dc2626;
   color: white;
   box-shadow: 0 14px 28px rgba(220,38,38,.2);
@@ -299,7 +328,12 @@ textarea {
   }
 
   .resultGrid,
-  .stats {
+  .stats,
+  .actionGrid {
     grid-template-columns: 1fr;
+  }
+
+  .quickGrid {
+    grid-template-columns: repeat(5, 1fr);
   }
 }
