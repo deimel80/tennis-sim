@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import Tesseract from 'tesseract.js'
 
-const initialTeams = [
+const demoTeams = [
   { name: 'Lüdenscheider TV 1899 1', played: 2, wins: 2, draws: 0, losses: 0, leaguePointsWon: 2, leaguePointsLost: 0, matchesWon: 13, matchesLost: 5, setsWon: 29, setsLost: 12, gamesWon: 186, gamesLost: 100 },
   { name: 'TC RW Siedlinghausen 1', played: 2, wins: 2, draws: 0, losses: 0, leaguePointsWon: 2, leaguePointsLost: 0, matchesWon: 10, matchesLost: 8, setsWon: 23, setsLost: 21, gamesWon: 167, gamesLost: 158 },
   { name: 'Siegener SC 07/09 1', played: 2, wins: 1, draws: 0, losses: 1, leaguePointsWon: 1, leaguePointsLost: 1, matchesWon: 10, matchesLost: 8, setsWon: 24, setsLost: 19, gamesWon: 175, gamesLost: 137 },
@@ -11,85 +11,65 @@ const initialTeams = [
   { name: 'TC Wiesental Herscheid 1', played: 2, wins: 0, draws: 0, losses: 2, leaguePointsWon: 0, leaguePointsLost: 2, matchesWon: 6, matchesLost: 12, setsWon: 14, setsLost: 26, gamesWon: 106, gamesLost: 179 }
 ]
 
-const initialFixtures = [
-  { date: '30.05.2026 11:00', home: 'TC RW Siedlinghausen 1', away: 'SuS Stemel 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '30.05.2026 13:00', home: 'Lüdenscheider TV 1899 1', away: 'TV Eiserfeld 74 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '30.05.2026 13:00', home: 'TuS Ferndorf 1', away: 'Siegener SC 07/09 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '13.06.2026 13:00', home: 'TC Wiesental Herscheid 1', away: 'TC RW Siedlinghausen 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '13.06.2026 13:00', home: 'TV Eiserfeld 74 1', away: 'Siegener SC 07/09 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '13.06.2026 14:30', home: 'SuS Stemel 1', away: 'TuS Ferndorf 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '20.06.2026 13:00', home: 'TuS Ferndorf 1', away: 'TV Eiserfeld 74 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '20.06.2026 13:00', home: 'SuS Stemel 1', away: 'Lüdenscheider TV 1899 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '20.06.2026 13:00', home: 'Siegener SC 07/09 1', away: 'TC Wiesental Herscheid 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '27.06.2026 11:00', home: 'TC RW Siedlinghausen 1', away: 'Lüdenscheider TV 1899 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '27.06.2026 13:00', home: 'TC Wiesental Herscheid 1', away: 'TuS Ferndorf 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '28.06.2026 10:00', home: 'TV Eiserfeld 74 1', away: 'SuS Stemel 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '11.07.2026 09:30', home: 'SuS Stemel 1', away: 'TC Wiesental Herscheid 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '11.07.2026 11:00', home: 'TC RW Siedlinghausen 1', away: 'TuS Ferndorf 1', result: '', sets: '', games: '', note: 'offen' },
-  { date: '11.07.2026 13:00', home: 'Lüdenscheider TV 1899 1', away: 'Siegener SC 07/09 1', result: '', sets: '', games: '', note: 'offen' }
+const demoFixtures = [
+  { date: '30.05.2026 11:00', home: 'TC RW Siedlinghausen 1', away: 'SuS Stemel 1', result: '', sets: '', games: '' },
+  { date: '30.05.2026 13:00', home: 'Lüdenscheider TV 1899 1', away: 'TV Eiserfeld 74 1', result: '', sets: '', games: '' },
+  { date: '30.05.2026 13:00', home: 'TuS Ferndorf 1', away: 'Siegener SC 07/09 1', result: '', sets: '', games: '' }
 ]
 
+const emptyFixture = { date: '', home: '', away: '', result: '', sets: '', games: '' }
 const quickResults = ['9:0', '8:1', '7:2', '6:3', '5:4', '4:5', '3:6', '2:7', '1:8', '0:9']
 
+function cleanLine(line) {
+  return line.replace(/[|]/g, ' ').replace(/\s+/g, ' ').trim()
+}
+
 function pair(text) {
-  const normalized = String(text || '')
-    .replace(/\s/g, '')
-    .replace('-', ':')
-    .replace('/', ':')
-    .replace(';', ':')
-  const m = normalized.match(/^(\d+):(\d+)$/)
+  const m = String(text || '').replace(/\s/g, '').replace('-', ':').replace('/', ':').replace(';', ':').match(/^(\d+):(\d+)$/)
   return m ? [Number(m[1]), Number(m[2])] : null
 }
 
-function ratio(won, lost) {
-  return `${won}:${lost}`
+function ratio(a, b) {
+  return `${a}:${b}`
 }
 
 function sortTeams(list, direct) {
   return [...list].sort((a, b) => {
     if (b.leaguePointsWon !== a.leaguePointsWon) return b.leaguePointsWon - a.leaguePointsWon
-
     const keyAB = `${a.name}__${b.name}`
     const keyBA = `${b.name}__${a.name}`
     if (direct[keyAB] === 'a') return -1
     if (direct[keyAB] === 'b') return 1
     if (direct[keyBA] === 'a') return 1
     if (direct[keyBA] === 'b') return -1
-
     const mdA = a.matchesWon - a.matchesLost
     const mdB = b.matchesWon - b.matchesLost
     if (mdB !== mdA) return mdB - mdA
     if (b.matchesWon !== a.matchesWon) return b.matchesWon - a.matchesWon
-
     const sdA = a.setsWon - a.setsLost
     const sdB = b.setsWon - b.setsLost
     if (sdB !== sdA) return sdB - sdA
     if (b.setsWon !== a.setsWon) return b.setsWon - a.setsWon
-
     const gdA = a.gamesWon - a.gamesLost
     const gdB = b.gamesWon - b.gamesLost
     if (gdB !== gdA) return gdB - gdA
     return b.gamesWon - a.gamesWon
-  }).map((t, i) => ({ ...t, rank: i + 1 }))
+  })
 }
 
-function normalizeLine(line) {
-  return line.replace(/\s+/g, ' ').replace(/[|]/g, ' ').trim()
-}
-
-function parseTableFromOcr(text) {
-  const lines = text.split('\n').map(normalizeLine).filter(Boolean)
+function parseTable(text) {
+  const lines = text.split('\n').map(cleanLine).filter(Boolean)
   const teams = []
 
   for (const line of lines) {
-    const pairs = [...line.matchAll(/(\d+)\s*[:;]\s*(\d+)/g)].map(x => [Number(x[1]), Number(x[2])])
+    const pairs = [...line.matchAll(/(\d+)\s*[:;]\s*(\d+)/g)].map(m => [Number(m[1]), Number(m[2])])
     if (pairs.length < 4) continue
 
     const prefix = line.match(/^\D*(\d+)\s+(.+?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+/)
     if (!prefix) continue
 
     const name = prefix[2].trim()
-    if (/rang|mannschaft|begegnungen|spielplan|datum/i.test(name)) continue
+    if (/rang|mannschaft|begegnungen|spielplan|datum|heim|gast/i.test(name)) continue
 
     teams.push({
       name,
@@ -108,18 +88,18 @@ function parseTableFromOcr(text) {
     })
   }
 
-  return teams.length >= 4 ? teams : initialTeams
+  return teams
 }
 
-function parseFixturesFromOcr(text, teams) {
-  const lines = text.split('\n').map(normalizeLine).filter(Boolean)
+function parseFixtures(text, teams) {
+  const lines = text.split('\n').map(cleanLine).filter(Boolean)
+  const names = teams.map(t => t.name)
   const fixtures = []
-  const known = teams.map(t => t.name)
 
   for (const line of lines) {
-    if (!/offen|ursprünglich/i.test(line)) continue
+    if (!/offen|ursprünglich|urspr/i.test(line)) continue
 
-    const found = known.filter(team => line.toLowerCase().includes(team.toLowerCase()))
+    const found = names.filter(name => line.toLowerCase().includes(name.toLowerCase()))
     if (found.length >= 2) {
       const dateMatch = line.match(/(\d{2}\.\d{2}\.\d{4}(?:\s+\d{1,2}:\d{2})?)/)
       fixtures.push({
@@ -128,38 +108,37 @@ function parseFixturesFromOcr(text, teams) {
         away: found[1],
         result: '',
         sets: '',
-        games: '',
-        note: 'offen'
+        games: ''
       })
     }
   }
 
-  return fixtures.length ? fixtures : initialFixtures
+  return fixtures
 }
 
-function fixtureDayKey(date) {
+function dayKey(date) {
   const m = String(date || '').match(/\d{2}\.\d{2}\.\d{4}/)
   return m ? m[0] : 'ohne Datum'
 }
 
-function App() {
-  const [baseTeams, setBaseTeams] = useState(initialTeams)
-  const [teams, setTeams] = useState(initialTeams)
-  const [fixtures, setFixtures] = useState(initialFixtures)
+export default function App() {
+  const [baseTeams, setBaseTeams] = useState(demoTeams)
+  const [teams, setTeams] = useState(demoTeams)
+  const [fixtures, setFixtures] = useState(demoFixtures)
   const [selectedDay, setSelectedDay] = useState('30.05.2026')
-  const [ocrText, setOcrText] = useState('')
   const [status, setStatus] = useState('Screenshot mit Tabelle und Spielplan hochladen.')
+  const [ocrText, setOcrText] = useState('')
   const [direct, setDirect] = useState({})
 
   const sortedTeams = useMemo(() => sortTeams(teams, direct), [teams, direct])
-  const days = useMemo(() => [...new Set(fixtures.map(fixture => fixtureDayKey(fixture.date)))], [fixtures])
-  const visibleFixtures = fixtures.filter(f => selectedDay === 'alle' || fixtureDayKey(f.date) === selectedDay)
+  const days = useMemo(() => [...new Set(fixtures.map(f => dayKey(f.date)))], [fixtures])
+  const visibleFixtures = fixtures.filter(f => selectedDay === 'alle' || dayKey(f.date) === selectedDay)
 
   const tieGroups = useMemo(() => {
     const groups = {}
-    sortedTeams.forEach(team => {
-      groups[team.leaguePointsWon] ||= []
-      groups[team.leaguePointsWon].push(team)
+    sortedTeams.forEach(t => {
+      groups[t.leaguePointsWon] ||= []
+      groups[t.leaguePointsWon].push(t)
     })
     return Object.values(groups).filter(g => g.length > 1)
   }, [sortedTeams])
@@ -168,65 +147,95 @@ function App() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    setStatus('OCR läuft. Auf dem iPhone kann das etwas dauern.')
+    setStatus('OCR läuft. Einen Moment warten.')
+    setFixtures([])
+    setTeams([])
+    setBaseTeams([])
 
     const result = await Tesseract.recognize(file, 'deu', {
-      logger: message => {
-        if (message.status === 'recognizing text') {
-          setStatus(`OCR läuft: ${Math.round((message.progress || 0) * 100)} %`)
-        }
+      logger: msg => {
+        if (msg.status === 'recognizing text') setStatus(`OCR läuft: ${Math.round((msg.progress || 0) * 100)} %`)
       }
     })
 
     const text = result.data.text
-    const parsedTeams = parseTableFromOcr(text)
-    const parsedFixtures = parseFixturesFromOcr(text, parsedTeams)
-    const parsedDays = [...new Set(parsedFixtures.map(f => fixtureDayKey(f.date)))]
+    const parsedTeams = parseTable(text)
+    const parsedFixtures = parsedTeams.length ? parseFixtures(text, parsedTeams) : []
 
     setOcrText(text)
+
+    if (!parsedTeams.length) {
+      setBaseTeams([])
+      setTeams([])
+      setFixtures([])
+      setSelectedDay('alle')
+      setStatus('Tabelle nicht erkannt. Bitte Screenshot größer/gerader hochladen oder Demo prüfen.')
+      return
+    }
+
     setBaseTeams(parsedTeams)
     setTeams(parsedTeams)
     setFixtures(parsedFixtures)
-    setSelectedDay(parsedDays[0] || 'alle')
-    setStatus(`Erkannt: ${parsedTeams.length} Teams, ${parsedFixtures.length} offene Spiele.`)
+    setSelectedDay(parsedFixtures.length ? dayKey(parsedFixtures[0].date) : 'alle')
+
+    if (!parsedFixtures.length) {
+      setStatus(`Erkannt: ${parsedTeams.length} Teams. Spielplan wurde nicht erkannt — bitte Spiele unten manuell hinzufügen.`)
+    } else {
+      setStatus(`Erkannt: ${parsedTeams.length} Teams, ${parsedFixtures.length} offene Spiele.`)
+    }
   }
 
-  function updateFixtureById(targetFixture, field, value) {
-    setFixtures(current => current.map(fixture => {
-      if (fixture !== targetFixture) return fixture
-      return { ...fixture, [field]: value }
-    }))
+  function loadDemo() {
+    setBaseTeams(demoTeams)
+    setTeams(demoTeams)
+    setFixtures(demoFixtures)
+    setSelectedDay('30.05.2026')
+    setDirect({})
+    setStatus('Demo-Daten geladen.')
+  }
+
+  function addFixture() {
+    const next = [...fixtures, { ...emptyFixture }]
+    setFixtures(next)
+    setSelectedDay('alle')
+  }
+
+  function updateFixture(index, field, value) {
+    const target = visibleFixtures[index]
+    setFixtures(current => current.map(f => f === target ? { ...f, [field]: value } : f))
+  }
+
+  function deleteFixture(index) {
+    const target = visibleFixtures[index]
+    setFixtures(current => current.filter(f => f !== target))
   }
 
   function simulate() {
-    const updated = baseTeams.map(team => ({ ...team }))
-    const selectedFixtures = fixtures.filter(f => {
-      const dayMatches = selectedDay === 'alle' || fixtureDayKey(f.date) === selectedDay
-      return dayMatches && pair(f.result)
-    })
+    const updated = baseTeams.map(t => ({ ...t }))
+    const selected = fixtures.filter(f => (selectedDay === 'alle' || dayKey(f.date) === selectedDay) && pair(f.result))
 
-    selectedFixtures.forEach(fixture => {
-      const home = updated.find(t => t.name === fixture.home)
-      const away = updated.find(t => t.name === fixture.away)
-      if (!home || !away) return
+    selected.forEach(f => {
+      const home = updated.find(t => t.name === f.home)
+      const away = updated.find(t => t.name === f.away)
+      const matchPair = pair(f.result)
+      if (!home || !away || !matchPair) return
 
-      const [hm, am] = pair(fixture.result)
-      const setPair = pair(fixture.sets)
-      const gamePair = pair(fixture.games)
+      const [hm, am] = matchPair
+      const setPair = pair(f.sets)
+      const gamePair = pair(f.games)
 
       home.played += 1
       away.played += 1
-
       home.matchesWon += hm
       home.matchesLost += am
       away.matchesWon += am
       away.matchesLost += hm
 
       if (setPair) {
-        const [hs, ass] = setPair
+        const [hs, as] = setPair
         home.setsWon += hs
-        home.setsLost += ass
-        away.setsWon += ass
+        home.setsLost += as
+        away.setsWon += as
         away.setsLost += hs
       }
 
@@ -255,16 +264,7 @@ function App() {
     })
 
     setTeams(sortTeams(updated, direct))
-    setStatus(selectedFixtures.length ? `${selectedFixtures.length} Begegnungen simuliert.` : 'Kein gültiges Ergebnis eingetragen. Nutze z. B. 6:3 oder den Schnellbutton.')
-  }
-
-  function resetDemo() {
-    setBaseTeams(initialTeams)
-    setTeams(initialTeams)
-    setFixtures(initialFixtures)
-    setSelectedDay('30.05.2026')
-    setDirect({})
-    setStatus('Demo-Daten geladen.')
+    setStatus(selected.length ? `${selected.length} Begegnungen berechnet.` : 'Kein gültiges Ergebnis vorhanden.')
   }
 
   function resetSimulation() {
@@ -275,19 +275,14 @@ function App() {
   return (
     <main className="app">
       <section className="top">
-        <div>
-          <p className="label">WTV / nuLiga</p>
-          <h1>Tabellenrechner</h1>
-          <p className="sub">Screenshot mit Tabelle + Spielplan hochladen. Danach nur die Ergebnisse der offenen Spiele wählen.</p>
-        </div>
+        <p className="label">WTV / nuLiga</p>
+        <h1>Tabellenrechner</h1>
+        <p className="sub">Screenshot mit Tabelle + Spielplan hochladen. Kein Demo-Fallback mehr bei echtem Upload.</p>
       </section>
 
       <section className="panel uploadPanel">
-        <label className="uploadButton">
-          Screenshot hochladen
-          <input type="file" accept="image/*" onChange={handleImage} />
-        </label>
-        <button className="ghost" onClick={resetDemo}>Demo laden</button>
+        <label className="uploadButton">Screenshot hochladen<input type="file" accept="image/*" onChange={handleImage} /></label>
+        <button className="ghost" onClick={loadDemo}>Demo laden</button>
         <p className="status">{status}</p>
       </section>
 
@@ -295,70 +290,61 @@ function App() {
         <div className="head">
           <h2>Spieltag simulieren</h2>
           <select value={selectedDay} onChange={e => setSelectedDay(e.target.value)}>
-            {days.map(day => <option key={day} value={day}>{day}</option>)}
-            <option value="alle">alle offenen Spiele</option>
+            {days.map(d => <option key={d} value={d}>{d}</option>)}
+            <option value="alle">alle Spiele</option>
           </select>
         </div>
+
+        {visibleFixtures.length === 0 && (
+          <div className="empty">
+            <b>Kein Spielplan erkannt.</b>
+            <p>Füge die offenen Spiele manuell hinzu. Die Teams aus der erkannten Tabelle stehen in der Auswahl.</p>
+          </div>
+        )}
 
         <div className="fixtureList">
           {visibleFixtures.map((fixture, index) => (
             <article className="fixtureCard" key={`${fixture.home}-${fixture.away}-${index}`}>
-              <div className="date">{fixture.date || 'offen'}</div>
-              <div className="teams">
-                <strong>{fixture.home}</strong>
-                <span>gegen</span>
-                <strong>{fixture.away}</strong>
+              <input className="dateInput" placeholder="Datum optional" value={fixture.date} onChange={e => updateFixture(index, 'date', e.target.value)} />
+              <div className="selectGrid">
+                <select value={fixture.home} onChange={e => updateFixture(index, 'home', e.target.value)}>
+                  <option value="">Heimteam</option>
+                  {baseTeams.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                </select>
+                <select value={fixture.away} onChange={e => updateFixture(index, 'away', e.target.value)}>
+                  <option value="">Gastteam</option>
+                  {baseTeams.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
+                </select>
               </div>
 
               <div className="quickGrid">
                 {quickResults.map(result => (
-                  <button
-                    type="button"
-                    className={fixture.result === result ? 'quick active' : 'quick'}
-                    key={result}
-                    onClick={() => updateFixtureById(fixture, 'result', result)}
-                  >
+                  <button key={result} type="button" className={fixture.result === result ? 'quick active' : 'quick'} onClick={() => updateFixture(index, 'result', result)}>
                     {result}
                   </button>
                 ))}
               </div>
 
               <div className="resultGrid">
-                <input
-                  inputMode="text"
-                  placeholder="Matches z. B. 6:3"
-                  value={fixture.result}
-                  onChange={e => updateFixtureById(fixture, 'result', e.target.value)}
-                />
-                <input
-                  inputMode="text"
-                  placeholder="Sätze optional"
-                  value={fixture.sets}
-                  onChange={e => updateFixtureById(fixture, 'sets', e.target.value)}
-                />
-                <input
-                  inputMode="text"
-                  placeholder="Games optional"
-                  value={fixture.games}
-                  onChange={e => updateFixtureById(fixture, 'games', e.target.value)}
-                />
+                <input inputMode="text" placeholder="Matches z. B. 6:3" value={fixture.result} onChange={e => updateFixture(index, 'result', e.target.value)} />
+                <input inputMode="text" placeholder="Sätze optional" value={fixture.sets} onChange={e => updateFixture(index, 'sets', e.target.value)} />
+                <input inputMode="text" placeholder="Games optional" value={fixture.games} onChange={e => updateFixture(index, 'games', e.target.value)} />
               </div>
+              <button className="deleteBtn" onClick={() => deleteFixture(index)}>Spiel entfernen</button>
             </article>
           ))}
         </div>
 
         <div className="actionGrid">
+          <button className="ghost" onClick={addFixture}>+ Spiel hinzufügen</button>
           <button className="ghost" onClick={resetSimulation}>Zurücksetzen</button>
-          <button className="primary" onClick={simulate}>Diesen Spieltag berechnen</button>
+          <button className="primary" onClick={simulate}>Berechnen</button>
         </div>
       </section>
 
       <section className="panel">
-        <div className="head">
-          <h2>Neue Tabelle</h2>
-          <span>{sortedTeams.length} Teams</span>
-        </div>
-
+        <div className="head"><h2>Tabelle</h2><span>{sortedTeams.length} Teams</span></div>
+        {sortedTeams.length === 0 && <p className="status">Noch keine Tabelle erkannt.</p>}
         <div className="teamCards">
           {sortedTeams.map((team, index) => (
             <article className="teamCard" key={team.name}>
@@ -379,11 +365,7 @@ function App() {
 
       {tieGroups.length > 0 && (
         <section className="panel">
-          <div className="head">
-            <h2>Direkter Vergleich</h2>
-            <span>bei Punktgleichheit</span>
-          </div>
-
+          <div className="head"><h2>Direkter Vergleich</h2><span>bei Punktgleichheit</span></div>
           {tieGroups.map(group => (
             <div className="directGroup" key={group.map(t => t.name).join('')}>
               {group.flatMap((a, i) => group.slice(i + 1).map(b => {
@@ -411,5 +393,3 @@ function App() {
     </main>
   )
 }
-
-export default App
