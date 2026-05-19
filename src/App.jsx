@@ -346,21 +346,10 @@ function mostLikelyRank(entry) {
 
 function compareSeasonProjection(a, b, maxMatches) {
   const strengthDiff = (b.baseStrength || 0) - (a.baseStrength || 0)
-  const avgDiff = a.avgRank - b.avgRank
-
-  // Die Stärke-Kennzahl ist die Plausibilitätsbremse.
-  // Wenn ein Team anhand Punkte/Matches/Sätze/Games klar stärker ist,
-  // darf Monte-Carlo-Rauschen es nicht hinter ein klar schwächeres Team sortieren.
-  if (Math.abs(strengthDiff) > 1.5) return strengthDiff
-
-  if (Math.abs(avgDiff) > 0.05) return avgDiff
-
-  const modalA = Number(Object.entries(a.rankCounts || {}).sort((x, y) => y[1] - x[1])[0]?.[0] || 999)
-  const modalB = Number(Object.entries(b.rankCounts || {}).sort((x, y) => y[1] - x[1])[0]?.[0] || 999)
-  if (modalA !== modalB) return modalA - modalB
-
-  return strengthDiff
+  if (Math.abs(strengthDiff) > 0.01) return strengthDiff
+  return a.avgRank - b.avgRank
 }
+
 
 function simulateRemainingSeason(baseTeams, fixtures, maxMatches, iterations = 1000) {
   const activeTeams = baseTeams.filter(team => !team.withdrawn)
