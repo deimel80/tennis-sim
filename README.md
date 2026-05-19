@@ -1,9 +1,11 @@
-# Tennis Tabellenrechner
+# Tennis Tabellenrechner OCR+
 
-Version 2.2
+Version 2.3
 
-- Kein automatischer Demo-Fallback mehr nach Upload
-- Wenn Spielplan nicht erkannt wird, bleibt die Spielplanliste leer
-- Spiele können manuell ergänzt werden
-- Teams kommen aus der erkannten Tabelle
-- iPhone-fähige Ergebnisbuttons
+- Bild-Vorverarbeitung vor OCR
+- Screenshot wird vergrößert, kontrastiert und entsättigt
+- besser für gelbliche nuLiga-Screenshots
+- toleranterer Tabellenparser
+- toleranterer Spielplanparser
+- Teamnamen direkt korrigierbar
+- kein Demo-Fallback bei echtem Upload
