@@ -318,6 +318,45 @@ function exportText(teams) {
   return lines.join('\n')
 }
 
+
+function expectedTeamPlan(teamName, teams, fixtures, maxMatches) {
+  const simulatedTeams = teams.map(team => ({ ...team }))
+  const plan = []
+
+  fixtures
+    .filter(fixture => fixture.status === 'open' && (fixture.home === teamName || fixture.away === teamName))
+    .forEach(fixture => {
+      const result = expectedResult(fixture, simulatedTeams, maxMatches)
+      const p = pair(result)
+      const isHome = fixture.home === teamName
+      const ownMatches = p ? (isHome ? p[0] : p[1]) : 0
+      const oppMatches = p ? (isHome ? p[1] : p[0]) : 0
+      const points = ownMatches > oppMatches ? 2 : ownMatches < oppMatches ? 0 : 1
+      const opponent = isHome ? fixture.away : fixture.home
+
+      plan.push({
+        date: fixture.date || 'ohne Datum',
+        opponent,
+        resultForTeam: p ? `${ownMatches}:${oppMatches}` : '',
+        originalResult: result,
+        points,
+        homeAway: isHome ? 'Heim' : 'Auswärts'
+      })
+
+      if (result) applySingleFixture(simulatedTeams, fixture, result)
+    })
+
+  return {
+    games: plan,
+    restPoints: plan.reduce((sum, game) => sum + game.points, 0),
+    restMatchDiff: plan.reduce((sum, game) => {
+      const p = pair(game.resultForTeam)
+      return p ? sum + (p[0] - p[1]) : sum
+    }, 0)
+  }
+}
+
+
 export default function App() {
   const [sourceText, setSourceText] = useState('')
   const [teams, setTeams] = useState([])
@@ -329,6 +368,7 @@ export default function App() {
   const [status, setStatus] = useState('Text einfügen und auswerten.')
   const [exportBox, setExportBox] = useState('')
   const [direct, setDirect] = useState({})
+  const [openDetailsFor, setOpenDetailsFor] = useState('')
   const exportRef = useRef(null)
 
   const activeTeams = simulatedTeams.length ? simulatedTeams : sortTeams(teams, direct)
@@ -351,6 +391,7 @@ export default function App() {
     setSeasonResults([])
     setMaxMatches(parsed.maxMatches)
     setSelectedDay(firstOpen ? fixtureDay(firstOpen.date) : 'alle')
+    setOpenDetailsFor('')
     setStatus(`Erkannt: ${parsed.teams.length} Teams, ${parsed.fixtures.length} Spiele, ${openCount} offen.`)
   }
 
@@ -404,7 +445,7 @@ export default function App() {
   return (
     <main className="app">
       <section className="hero">
-        <p className="eyebrow">tennis-sim · Version 5.1.1</p>
+        <p className="eyebrow">tennis-sim · Version 5.2.0</p>
         <h1>Tabellenrechner</h1>
         <p>Text aus der Ligaseite kopieren, einfügen und Spieltage simulieren.</p>
       </section>
@@ -518,7 +559,7 @@ export default function App() {
           <h2>4. Saison-Prognose</h2>
           <span>1000 Simulationen</span>
         </div>
-        <p className="status">Version 5.1.1: Sortierung nach Ø Tabellenpunkten, Ø Matchdifferenz und Ø gewonnenen Matches.</p>
+        <p className="status">Version 5.2.0: Sortierung nach Ø Tabellenpunkten, Ø Matchdifferenz und Ø gewonnenen Matches. Über „Restprogramm anzeigen“ siehst du die angenommenen Ergebnisse.</p>
         <div className="actionRow">
           <button onClick={simulateFullSeason}>Rest-Saison simulieren</button>
           <button className="dark" onClick={() => setSeasonResults([])}>Löschen</button>
@@ -532,9 +573,41 @@ export default function App() {
                 <div className="stats">
                   <span>Ø Punkte <b>{entry.avgPoints.toFixed(1)}</b></span>
                   <span>Ø Matchdiff. <b>{entry.avgMatchDiff.toFixed(1)}</b></span>
+                  <span>Ø gew. Matches <b>{entry.avgMatchesWon.toFixed(1)}</b></span>
                   <span>Ø Platz <b>{entry.avgRank.toFixed(1)}</b></span>
-                  <span>Platz 1 <b>{entry.firstPct}%</b></span>
                 </div>
+
+                <button className="detailsButton" onClick={() => setOpenDetailsFor(openDetailsFor === entry.name ? '' : entry.name)}>
+                  {openDetailsFor === entry.name ? 'Restprogramm ausblenden' : 'Restprogramm anzeigen'}
+                </button>
+
+                {openDetailsFor === entry.name && (() => {
+                  const details = expectedTeamPlan(entry.name, teams, fixtures, maxMatches)
+                  return (
+                    <div className="projectionDetails">
+                      <div className="detailSummary">
+                        <span>Erwartete Restpunkte <b>+{details.restPoints}</b></span>
+                        <span>Erwartete Matchdiff. <b>{details.restMatchDiff > 0 ? '+' : ''}{details.restMatchDiff}</b></span>
+                      </div>
+
+                      {!details.games.length && <p className="empty">Keine offenen Spiele mehr.</p>}
+
+                      {details.games.map((game, detailIndex) => (
+                        <div className="detailGame" key={`${entry.name}-${detailIndex}`}>
+                          <div>
+                            <b>{game.opponent}</b>
+                            <small>{game.date} · {game.homeAway}</small>
+                          </div>
+                          <div className="detailResult">
+                            <b>{game.resultForTeam}</b>
+                            <small>{game.points} Pkt.</small>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
+</div>
               </div>
             </article>
           ))}
