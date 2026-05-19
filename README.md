@@ -1,16 +1,24 @@
-# Tennis Tabellenrechner
+# tennis-sim
 
-Version 3.4.1
+Version 4.0
 
-## Korrektur
+## Features
 
-- Rest-Saison-Simulation realistischer gemacht
-- deutlich weniger Zufall bei klaren Kräfteverhältnissen
-- enge Spiele streuen weiter
-- Anzeige sortiert nach häufigstem Endplatz statt nur Durchschnittsplatz
-- „häufigster Platz“ ergänzt
+- Tabellen-Simulation
+- Saison-End-Prognose
+- realistische Monte-Carlo-Simulation
+- Stärke-Bewertung
+- PNG-Bildexport
+- WhatsApp-Export
+- mobile Optimierung
+- GitHub Pages kompatibel
 
-## Start
+## GitHub Pages
+
+Repository:
+`tennis-sim`
+
+## Start lokal
 
 ```bash
 npm install

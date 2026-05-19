@@ -1,7 +1,7 @@
 {
-  "name": "table-simulator",
+  "name": "tennis-sim",
   "private": true,
-  "version": "3.4.1",
+  "version": "4.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "html2canvas": "^1.4.1"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
