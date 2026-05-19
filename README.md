@@ -1,18 +1,14 @@
 # tennis-sim
 
-Version 4.0.5
+Version 5.0.0
 
-## Fix Saison-Prognose
+Sauber neu erstellte Code-Version.
 
-- Sätze/Games werden nur noch für die Ausgangsstärke aus echten Spielen genutzt
-- simulierte Restspiele schreiben nur Punkte und Matchpunkte fort
-- Prognose-Sortierung:
-  1. Ø Tabellenpunkte
-  2. Ø Matchdifferenz
-  3. Ø gewonnene Matches
-  4. Ausgangsstärke als Tiebreaker
-- fachlich sauberer für Tennis-Ligatabellen
+Die Saison-Prognose sortiert nach:
+1. Ø Tabellenpunkte
+2. Ø Matchdifferenz
+3. Ø gewonnene Matches
+4. Ausgangsstärke als Tiebreaker
 
-## Upload
-
-Nur den Inhalt dieser ZIP in das Repository hochladen.
+Sätze und Games werden nur aus echten Ergebnissen für die Ausgangsstärke genutzt.
+Offene prognostizierte Spiele schreiben nur Punkte und Matchpunkte fort.
