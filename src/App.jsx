@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 
-const APP_VERSION = '5.2.3'
+const APP_VERSION = '5.2.4'
 
 const exampleText = `Tabelle
  	Rang	Mannschaft	Begegnungen	S	U	N	Punkte	Matches	Sätze	Games
@@ -530,16 +530,26 @@ export default function App() {
         <p>Text aus der Ligaseite kopieren, einfügen und Spieltage simulieren.</p>
       </section>
 
-      <section className="panel help">
+      <nav className="jumpNav">
+        <a href="#daten">1. Daten</a>
+        <a href="#spieltag">2. Spieltag</a>
+        <a href="#tabelle">3. Tabelle</a>
+        <a href="#prognose">4. Prognose</a>
+        <a href="#logik">Logik</a>
+      </nav>
+
+      <section id="daten" className="panel help">
         <h2>So kopierst du die Daten</h2>
-        <p>Auf der Ligaseite den Bereich von <b>„Tabelle“ bis zum Ende des „Spielplan“</b> markieren, kopieren und unten einfügen.</p>
+        <p>Auf der Ligaseite den Bereich von <b>„Tabelle“ bis zum Ende des „Spielplan“</b> markieren, kopieren und unten einfügen.</p><p>Am zuverlässigsten ist kopierter Text aus der Seite. Screenshot/OCR ist deutlich fehleranfälliger.</p>
       </section>
 
-      <section className="panel">
+      <section id="daten-eingabe" className="panel">
         <div className="head">
           <h2>1. Daten</h2>
           <button className="small dark" onClick={loadExample}>Beispiel</button>
         </div>
+
+        <p className="sectionHelp">Hier wird der kopierte Tabellen- und Spielplantext eingelesen. Daraus erkennt die App Teams, bisherige Ergebnisse und offene Spiele.</p>
 
         <textarea className="source" value={sourceText} onChange={event => setSourceText(event.target.value)} placeholder="Hier Tabellen- und Spielplantext einfügen..." />
 
@@ -559,7 +569,7 @@ export default function App() {
         <p className="status">{status}</p>
       </section>
 
-      <section className="panel">
+      <section id="spieltag" className="panel">
         <div className="head">
           <h2>2. Spieltag</h2>
           <select value={selectedDay} onChange={event => setSelectedDay(event.target.value)}>
@@ -567,6 +577,8 @@ export default function App() {
             <option value="alle">alle offenen Spiele</option>
           </select>
         </div>
+
+        <p className="sectionHelp">Wähle einen Spieltag aus und trage die erwarteten Ergebnisse ein. Die Schätzung ist nur ein Vorschlag und kann überschrieben werden.</p>
 
         {!visibleFixtures.length && <p className="empty">Keine offenen Spiele erkannt.</p>}
 
@@ -616,11 +628,13 @@ export default function App() {
         </div>
       </section>
 
-      <section className="panel">
+      <section id="tabelle" className="panel">
         <div className="head">
           <h2>3. Tabelle</h2>
           <span>{activeTeams.length} Teams · {maxMatches} Matches</span>
         </div>
+
+        <p className="sectionHelp">Die Tabelle zeigt entweder den aktuellen Stand oder den Stand nach deiner manuellen Spieltag-Simulation.</p>
 
         <div className="actionRow">
           <button onClick={exportImage}>PNG exportieren</button>
@@ -651,13 +665,13 @@ export default function App() {
         </div>
       </section>
 
-      <section className="panel">
+      <section id="prognose" className="panel">
         <div className="head">
           <h2>4. Saison-Prognose</h2>
           <span>1000 Simulationen</span>
         </div>
 
-        <p className="status">Version {APP_VERSION}: Sortierung nach Ø Tabellenpunkten, Ø Matchdifferenz und Ø gewonnenen Matches. Über „Restprogramm anzeigen“ siehst du die global einmal berechneten Ergebnisse.</p>
+        <p className="status">Version {APP_VERSION}: Die Rest-Saison wird 1000-mal simuliert. Sortiert wird nach Ø Tabellenpunkten, danach Ø Matchdifferenz und Ø gewonnenen Matches. Über „Restprogramm anzeigen“ siehst du die global einmal berechneten Ergebnisse.</p>
 
         <div className="actionRow">
           <button onClick={simulateFullSeason}>Rest-Saison simulieren</button>
@@ -723,6 +737,36 @@ export default function App() {
           ))}
         </div>
       </section>
+
+      <section id="logik" className="panel logicPanel">
+        <div className="head">
+          <h2>Wie die Prognose funktioniert</h2>
+          <span>kurz erklärt</span>
+        </div>
+
+        <div className="logicGrid">
+          <div>
+            <h3>1. Ausgangsstärke</h3>
+            <p>Aus echten bisherigen Ergebnissen werden Punkte, Matchdifferenz, Satzdifferenz und Gamedifferenz bewertet. Sätze und Games dienen nur als Startbewertung.</p>
+          </div>
+
+          <div>
+            <h3>2. Offene Spiele</h3>
+            <p>Für jedes offene Spiel wird ein Match-Ergebnis geschätzt, zum Beispiel 5:4 oder 6:3. Dieses Ergebnis gilt global für beide Teams und wird nur gespiegelt angezeigt.</p>
+          </div>
+
+          <div>
+            <h3>3. Saison-Simulation</h3>
+            <p>Die Rest-Saison wird 1000-mal leicht variiert simuliert. Dadurch entstehen Ø Punkte, Ø Matchdifferenz, Ø gewonnene Matches und Ø Platz.</p>
+          </div>
+
+          <div>
+            <h3>4. Warum wirkt manches komisch?</h3>
+            <p>Ein Team kann trotz besserer Einzelwerte hinter einem anderen landen, wenn das Restprogramm ungünstiger ist oder direkte Kellerduelle in der Simulation verloren gehen.</p>
+          </div>
+        </div>
+      </section>
+
     </main>
   )
 }

@@ -163,3 +163,71 @@ button.small { min-height: 40px; padding: 8px 12px; }
   .quickGrid { grid-template-columns: repeat(5, 1fr); }
   .source { min-height: 220px; }
 }
+
+
+.jumpNav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 8px 0 12px;
+  margin-bottom: 4px;
+  background: rgba(244, 244, 245, .92);
+  backdrop-filter: blur(10px);
+}
+
+.jumpNav a {
+  flex: 0 0 auto;
+  text-decoration: none;
+  color: #111827;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 10px 13px;
+  font-size: 13px;
+  font-weight: 850;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, .06);
+}
+
+.sectionHelp {
+  margin: 0 0 12px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.logicPanel {
+  background: #f8fafc;
+}
+
+.logicGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.logicGrid div {
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.logicGrid h3 {
+  margin: 0 0 6px;
+  color: #991b1b;
+  font-size: 17px;
+}
+
+.logicGrid p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .logicGrid {
+    grid-template-columns: 1fr;
+  }
+}
