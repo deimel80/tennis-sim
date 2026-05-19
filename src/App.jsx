@@ -2,26 +2,41 @@ import { useMemo, useState } from 'react'
 import Tesseract from 'tesseract.js'
 
 const demoTeams = [
-  { name: 'Lüdenscheider TV 1899 1', played: 2, wins: 2, draws: 0, losses: 0, leaguePointsWon: 2, leaguePointsLost: 0, matchesWon: 13, matchesLost: 5, setsWon: 29, setsLost: 12, gamesWon: 186, gamesLost: 100 },
-  { name: 'TC RW Siedlinghausen 1', played: 2, wins: 2, draws: 0, losses: 0, leaguePointsWon: 2, leaguePointsLost: 0, matchesWon: 10, matchesLost: 8, setsWon: 23, setsLost: 21, gamesWon: 167, gamesLost: 158 },
-  { name: 'Siegener SC 07/09 1', played: 2, wins: 1, draws: 0, losses: 1, leaguePointsWon: 1, leaguePointsLost: 1, matchesWon: 10, matchesLost: 8, setsWon: 24, setsLost: 19, gamesWon: 175, gamesLost: 137 },
-  { name: 'TV Eiserfeld 74 1', played: 2, wins: 1, draws: 0, losses: 1, leaguePointsWon: 1, leaguePointsLost: 1, matchesWon: 9, matchesLost: 9, setsWon: 21, setsLost: 20, gamesWon: 162, gamesLost: 152 },
-  { name: 'SuS Stemel 1', played: 1, wins: 0, draws: 0, losses: 1, leaguePointsWon: 0, leaguePointsLost: 1, matchesWon: 3, matchesLost: 6, setsWon: 7, setsLost: 13, gamesWon: 60, gamesLost: 92 },
-  { name: 'TuS Ferndorf 1', played: 1, wins: 0, draws: 0, losses: 1, leaguePointsWon: 0, leaguePointsLost: 1, matchesWon: 3, matchesLost: 6, setsWon: 7, setsLost: 14, gamesWon: 56, gamesLost: 94 },
-  { name: 'TC Wiesental Herscheid 1', played: 2, wins: 0, draws: 0, losses: 2, leaguePointsWon: 0, leaguePointsLost: 2, matchesWon: 6, matchesLost: 12, setsWon: 14, setsLost: 26, gamesWon: 106, gamesLost: 179 }
+  { name: 'TC Lese GW Köln 1', played: 3, wins: 3, draws: 0, losses: 0, leaguePointsWon: 6, leaguePointsLost: 0, matchesWon: 20, matchesLost: 7, setsWon: 46, setsLost: 15, gamesWon: 310, gamesLost: 189 },
+  { name: 'ETB SW Essen 1', played: 3, wins: 3, draws: 0, losses: 0, leaguePointsWon: 6, leaguePointsLost: 0, matchesWon: 18, matchesLost: 9, setsWon: 38, setsLost: 23, gamesWon: 265, gamesLost: 206 },
+  { name: 'TC GW Aachen 1', played: 3, wins: 2, draws: 0, losses: 1, leaguePointsWon: 4, leaguePointsLost: 2, matchesWon: 18, matchesLost: 9, setsWon: 36, setsLost: 19, gamesWon: 279, gamesLost: 193 },
+  { name: 'Kölner THC Stadion RW 1', played: 2, wins: 1, draws: 0, losses: 1, leaguePointsWon: 2, leaguePointsLost: 2, matchesWon: 8, matchesLost: 10, setsWon: 17, setsLost: 23, gamesWon: 166, gamesLost: 201 },
+  { name: 'Marienburger SC 1', played: 2, wins: 0, draws: 0, losses: 2, leaguePointsWon: 0, leaguePointsLost: 4, matchesWon: 5, matchesLost: 13, setsWon: 11, setsLost: 27, gamesWon: 117, gamesLost: 191 },
+  { name: 'TC Bovert 1', played: 2, wins: 0, draws: 0, losses: 2, leaguePointsWon: 0, leaguePointsLost: 4, matchesWon: 2, matchesLost: 16, setsWon: 8, setsLost: 33, gamesWon: 108, gamesLost: 202 },
+  { name: 'Sauerländer TK Arnsberg 1907 1', played: 3, wins: 0, draws: 0, losses: 3, leaguePointsWon: 0, leaguePointsLost: 6, matchesWon: 10, matchesLost: 17, setsWon: 21, setsLost: 37, gamesWon: 197, gamesLost: 260 }
 ]
 
 const demoFixtures = [
-  { date: '30.05.2026 11:00', home: 'TC RW Siedlinghausen 1', away: 'SuS Stemel 1', result: '', sets: '', games: '' },
-  { date: '30.05.2026 13:00', home: 'Lüdenscheider TV 1899 1', away: 'TV Eiserfeld 74 1', result: '', sets: '', games: '' },
-  { date: '30.05.2026 13:00', home: 'TuS Ferndorf 1', away: 'Siegener SC 07/09 1', result: '', sets: '', games: '' }
+  { date: '30.05.2026 13:00', home: 'TC Lese GW Köln 1', away: 'TC GW Aachen 1', result: '', sets: '', games: '' },
+  { date: '30.05.2026 13:00', home: 'Marienburger SC 1', away: 'TC Bovert 1', result: '', sets: '', games: '' },
+  { date: '30.05.2026 13:00', home: 'Kölner THC Stadion RW 1', away: 'Sauerländer TK Arnsberg 1907 1', result: '', sets: '', games: '' }
 ]
 
-const emptyFixture = { date: '', home: '', away: '', result: '', sets: '', games: '' }
 const quickResults = ['9:0', '8:1', '7:2', '6:3', '5:4', '4:5', '3:6', '2:7', '1:8', '0:9']
 
-function cleanLine(line) {
-  return line.replace(/[|]/g, ' ').replace(/\s+/g, ' ').trim()
+function normalize(s) {
+  return String(s || '')
+    .replace(/[|]/g, ' ')
+    .replace(/[—–]/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function normalizeName(s) {
+  return normalize(s)
+    .replace(/_/g, ' ')
+    .replace(/\bT C\b/gi, 'TC')
+    .replace(/\bG W\b/gi, 'GW')
+    .replace(/\bS W\b/gi, 'SW')
+    .replace(/\bR W\b/gi, 'RW')
+    .replace(/\bT H C\b/gi, 'THC')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function pair(text) {
@@ -33,23 +48,64 @@ function ratio(a, b) {
   return `${a}:${b}`
 }
 
+async function preprocessImage(file) {
+  const bitmap = await createImageBitmap(file)
+  const scale = Math.min(3, Math.max(2, 2600 / bitmap.width))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(bitmap.width * scale)
+  canvas.height = Math.round(bitmap.height * scale)
+
+  const ctx = canvas.getContext('2d', { willReadFrequently: true })
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+
+  const image = ctx.getImageData(0, 0, canvas.width, canvas.height)
+  const data = image.data
+
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i]
+    const g = data[i + 1]
+    const b = data[i + 2]
+    let gray = 0.299 * r + 0.587 * g + 0.114 * b
+
+    gray = (gray - 128) * 1.85 + 128
+    gray = Math.max(0, Math.min(255, gray))
+
+    if (gray > 188) gray = 255
+    if (gray < 115) gray = 0
+
+    data[i] = gray
+    data[i + 1] = gray
+    data[i + 2] = gray
+  }
+
+  ctx.putImageData(image, 0, 0)
+
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+}
+
 function sortTeams(list, direct) {
   return [...list].sort((a, b) => {
     if (b.leaguePointsWon !== a.leaguePointsWon) return b.leaguePointsWon - a.leaguePointsWon
+
     const keyAB = `${a.name}__${b.name}`
     const keyBA = `${b.name}__${a.name}`
     if (direct[keyAB] === 'a') return -1
     if (direct[keyAB] === 'b') return 1
     if (direct[keyBA] === 'a') return 1
     if (direct[keyBA] === 'b') return -1
+
     const mdA = a.matchesWon - a.matchesLost
     const mdB = b.matchesWon - b.matchesLost
     if (mdB !== mdA) return mdB - mdA
     if (b.matchesWon !== a.matchesWon) return b.matchesWon - a.matchesWon
+
     const sdA = a.setsWon - a.setsLost
     const sdB = b.setsWon - b.setsLost
     if (sdB !== sdA) return sdB - sdA
     if (b.setsWon !== a.setsWon) return b.setsWon - a.setsWon
+
     const gdA = a.gamesWon - a.gamesLost
     const gdB = b.gamesWon - b.gamesLost
     if (gdB !== gdA) return gdB - gdA
@@ -58,18 +114,58 @@ function sortTeams(list, direct) {
 }
 
 function parseTable(text) {
-  const lines = text.split('\n').map(cleanLine).filter(Boolean)
+  const rawLines = text.split('\n').map(normalize).filter(Boolean)
+  const tableLines = []
+  let inTable = false
+
+  for (const line of rawLines) {
+    if (/tabelle/i.test(line)) {
+      inTable = true
+      continue
+    }
+
+    if (/spielplan/i.test(line)) {
+      inTable = false
+    }
+
+    if (inTable) tableLines.push(line)
+  }
+
+  const lines = tableLines.length ? tableLines : rawLines
   const teams = []
 
   for (const line of lines) {
     const pairs = [...line.matchAll(/(\d+)\s*[:;]\s*(\d+)/g)].map(m => [Number(m[1]), Number(m[2])])
     if (pairs.length < 4) continue
 
-    const prefix = line.match(/^\D*(\d+)\s+(.+?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+/)
-    if (!prefix) continue
+    const beforePairs = line.split(/\d+\s*[:;]\s*\d+/)[0]
+    const prefix = beforePairs.match(/^\D*(\d+)\s+(.+?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*$/)
 
-    const name = prefix[2].trim()
-    if (/rang|mannschaft|begegnungen|spielplan|datum|heim|gast/i.test(name)) continue
+    if (!prefix) {
+      const loose = beforePairs.match(/^\D*(\d+)\s+(.+?)\s+(\d)\s+(\d)\s+(\d)\s+(\d)\s*$/)
+      if (!loose) continue
+      const name = normalizeName(loose[2])
+      if (/rang|mannschaft|begegnungen|spielplan|datum|punkte/i.test(name)) continue
+      teams.push({
+        name,
+        played: Number(loose[3]),
+        wins: Number(loose[4]),
+        draws: Number(loose[5]),
+        losses: Number(loose[6]),
+        leaguePointsWon: pairs[0][0],
+        leaguePointsLost: pairs[0][1],
+        matchesWon: pairs[1][0],
+        matchesLost: pairs[1][1],
+        setsWon: pairs[2][0],
+        setsLost: pairs[2][1],
+        gamesWon: pairs[3][0],
+        gamesLost: pairs[3][1]
+      })
+      continue
+    }
+
+    const name = normalizeName(prefix[2])
+    if (/rang|mannschaft|begegnungen|spielplan|datum|punkte/i.test(name)) continue
 
     teams.push({
       name,
@@ -91,15 +187,45 @@ function parseTable(text) {
   return teams
 }
 
+function findTeamsInLine(line, teams) {
+  const normalizedLine = normalizeName(line).toLowerCase()
+  const hits = []
+
+  for (const team of teams) {
+    const full = team.name.toLowerCase()
+    const withoutNumber = full.replace(/\s+\d+$/, '')
+    const tokens = withoutNumber.split(/\s+/).filter(t => t.length >= 3)
+    const tokenHits = tokens.filter(t => normalizedLine.includes(t)).length
+
+    if (normalizedLine.includes(full) || normalizedLine.includes(withoutNumber) || tokenHits >= Math.min(2, tokens.length)) {
+      hits.push(team.name)
+    }
+  }
+
+  return [...new Set(hits)]
+}
+
 function parseFixtures(text, teams) {
-  const lines = text.split('\n').map(cleanLine).filter(Boolean)
-  const names = teams.map(t => t.name)
+  const rawLines = text.split('\n').map(normalize).filter(Boolean)
+  const lines = []
+  let inPlan = false
+
+  for (const line of rawLines) {
+    if (/spielplan/i.test(line)) {
+      inPlan = true
+      continue
+    }
+
+    if (inPlan) lines.push(line)
+  }
+
+  const source = lines.length ? lines : rawLines
   const fixtures = []
 
-  for (const line of lines) {
+  for (const line of source) {
     if (!/offen|ursprünglich|urspr/i.test(line)) continue
 
-    const found = names.filter(name => line.toLowerCase().includes(name.toLowerCase()))
+    const found = findTeamsInLine(line, teams)
     if (found.length >= 2) {
       const dateMatch = line.match(/(\d{2}\.\d{2}\.\d{4}(?:\s+\d{1,2}:\d{2})?)/)
       fixtures.push({
@@ -147,14 +273,22 @@ export default function App() {
     const file = event.target.files?.[0]
     if (!file) return
 
-    setStatus('OCR läuft. Einen Moment warten.')
+    setStatus('Bild wird für OCR optimiert.')
     setFixtures([])
     setTeams([])
     setBaseTeams([])
 
-    const result = await Tesseract.recognize(file, 'deu', {
+    const processed = await preprocessImage(file)
+
+    setStatus('OCR läuft. Das kann auf dem iPhone 20–90 Sekunden dauern.')
+
+    const result = await Tesseract.recognize(processed, 'deu', {
+      tessedit_pageseg_mode: '6',
+      preserve_interword_spaces: '1',
       logger: msg => {
-        if (msg.status === 'recognizing text') setStatus(`OCR läuft: ${Math.round((msg.progress || 0) * 100)} %`)
+        if (msg.status === 'recognizing text') {
+          setStatus(`OCR läuft: ${Math.round((msg.progress || 0) * 100)} %`)
+        }
       }
     })
 
@@ -165,11 +299,7 @@ export default function App() {
     setOcrText(text)
 
     if (!parsedTeams.length) {
-      setBaseTeams([])
-      setTeams([])
-      setFixtures([])
-      setSelectedDay('alle')
-      setStatus('Tabelle nicht erkannt. Bitte Screenshot größer/gerader hochladen oder Demo prüfen.')
+      setStatus('Tabelle nicht erkannt. Bitte Screenshot näher ran, gerade und ohne Browserleisten hochladen.')
       return
     }
 
@@ -179,7 +309,7 @@ export default function App() {
     setSelectedDay(parsedFixtures.length ? dayKey(parsedFixtures[0].date) : 'alle')
 
     if (!parsedFixtures.length) {
-      setStatus(`Erkannt: ${parsedTeams.length} Teams. Spielplan wurde nicht erkannt — bitte Spiele unten manuell hinzufügen.`)
+      setStatus(`Erkannt: ${parsedTeams.length} Teams. Spielplan nicht sicher erkannt — Spiele unten manuell hinzufügen.`)
     } else {
       setStatus(`Erkannt: ${parsedTeams.length} Teams, ${parsedFixtures.length} offene Spiele.`)
     }
@@ -195,19 +325,22 @@ export default function App() {
   }
 
   function addFixture() {
-    const next = [...fixtures, { ...emptyFixture }]
-    setFixtures(next)
+    setFixtures([...fixtures, { date: '', home: '', away: '', result: '', sets: '', games: '' }])
     setSelectedDay('alle')
   }
 
-  function updateFixture(index, field, value) {
-    const target = visibleFixtures[index]
+  function updateFixture(target, field, value) {
     setFixtures(current => current.map(f => f === target ? { ...f, [field]: value } : f))
   }
 
-  function deleteFixture(index) {
-    const target = visibleFixtures[index]
+  function deleteFixture(target) {
     setFixtures(current => current.filter(f => f !== target))
+  }
+
+  function updateTeam(index, field, value) {
+    const update = list => list.map((t, i) => i === index ? { ...t, [field]: value } : t)
+    setBaseTeams(update)
+    setTeams(update)
   }
 
   function simulate() {
@@ -226,6 +359,7 @@ export default function App() {
 
       home.played += 1
       away.played += 1
+
       home.matchesWon += hm
       home.matchesLost += am
       away.matchesWon += am
@@ -250,16 +384,13 @@ export default function App() {
       if (hm > am) {
         home.wins += 1
         away.losses += 1
-        home.leaguePointsWon += 1
-        away.leaguePointsLost += 1
+        home.leaguePointsWon += 2
+        away.leaguePointsLost += 2
       } else if (am > hm) {
         away.wins += 1
         home.losses += 1
-        away.leaguePointsWon += 1
-        home.leaguePointsLost += 1
-      } else {
-        home.draws += 1
-        away.draws += 1
+        away.leaguePointsWon += 2
+        home.leaguePointsLost += 2
       }
     })
 
@@ -267,17 +398,12 @@ export default function App() {
     setStatus(selected.length ? `${selected.length} Begegnungen berechnet.` : 'Kein gültiges Ergebnis vorhanden.')
   }
 
-  function resetSimulation() {
-    setTeams(baseTeams)
-    setStatus('Simulation zurückgesetzt.')
-  }
-
   return (
     <main className="app">
       <section className="top">
         <p className="label">WTV / nuLiga</p>
         <h1>Tabellenrechner</h1>
-        <p className="sub">Screenshot mit Tabelle + Spielplan hochladen. Kein Demo-Fallback mehr bei echtem Upload.</p>
+        <p className="sub">OCR mit Bildoptimierung. Für gelbe nuLiga-Screenshots besser geeignet.</p>
       </section>
 
       <section className="panel uploadPanel">
@@ -298,20 +424,20 @@ export default function App() {
         {visibleFixtures.length === 0 && (
           <div className="empty">
             <b>Kein Spielplan erkannt.</b>
-            <p>Füge die offenen Spiele manuell hinzu. Die Teams aus der erkannten Tabelle stehen in der Auswahl.</p>
+            <p>Füge die offenen Spiele manuell hinzu. Die Teams aus der Tabelle stehen in der Auswahl.</p>
           </div>
         )}
 
         <div className="fixtureList">
           {visibleFixtures.map((fixture, index) => (
             <article className="fixtureCard" key={`${fixture.home}-${fixture.away}-${index}`}>
-              <input className="dateInput" placeholder="Datum optional" value={fixture.date} onChange={e => updateFixture(index, 'date', e.target.value)} />
+              <input className="dateInput" placeholder="Datum optional" value={fixture.date} onChange={e => updateFixture(fixture, 'date', e.target.value)} />
               <div className="selectGrid">
-                <select value={fixture.home} onChange={e => updateFixture(index, 'home', e.target.value)}>
+                <select value={fixture.home} onChange={e => updateFixture(fixture, 'home', e.target.value)}>
                   <option value="">Heimteam</option>
                   {baseTeams.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
                 </select>
-                <select value={fixture.away} onChange={e => updateFixture(index, 'away', e.target.value)}>
+                <select value={fixture.away} onChange={e => updateFixture(fixture, 'away', e.target.value)}>
                   <option value="">Gastteam</option>
                   {baseTeams.map(t => <option key={t.name} value={t.name}>{t.name}</option>)}
                 </select>
@@ -319,25 +445,25 @@ export default function App() {
 
               <div className="quickGrid">
                 {quickResults.map(result => (
-                  <button key={result} type="button" className={fixture.result === result ? 'quick active' : 'quick'} onClick={() => updateFixture(index, 'result', result)}>
+                  <button key={result} type="button" className={fixture.result === result ? 'quick active' : 'quick'} onClick={() => updateFixture(fixture, 'result', result)}>
                     {result}
                   </button>
                 ))}
               </div>
 
               <div className="resultGrid">
-                <input inputMode="text" placeholder="Matches z. B. 6:3" value={fixture.result} onChange={e => updateFixture(index, 'result', e.target.value)} />
-                <input inputMode="text" placeholder="Sätze optional" value={fixture.sets} onChange={e => updateFixture(index, 'sets', e.target.value)} />
-                <input inputMode="text" placeholder="Games optional" value={fixture.games} onChange={e => updateFixture(index, 'games', e.target.value)} />
+                <input inputMode="text" placeholder="Matches z. B. 6:3" value={fixture.result} onChange={e => updateFixture(fixture, 'result', e.target.value)} />
+                <input inputMode="text" placeholder="Sätze optional" value={fixture.sets} onChange={e => updateFixture(fixture, 'sets', e.target.value)} />
+                <input inputMode="text" placeholder="Spiele optional" value={fixture.games} onChange={e => updateFixture(fixture, 'games', e.target.value)} />
               </div>
-              <button className="deleteBtn" onClick={() => deleteFixture(index)}>Spiel entfernen</button>
+              <button className="deleteBtn" onClick={() => deleteFixture(fixture)}>Spiel entfernen</button>
             </article>
           ))}
         </div>
 
         <div className="actionGrid">
           <button className="ghost" onClick={addFixture}>+ Spiel hinzufügen</button>
-          <button className="ghost" onClick={resetSimulation}>Zurücksetzen</button>
+          <button className="ghost" onClick={() => setTeams(baseTeams)}>Zurücksetzen</button>
           <button className="primary" onClick={simulate}>Berechnen</button>
         </div>
       </section>
@@ -347,15 +473,15 @@ export default function App() {
         {sortedTeams.length === 0 && <p className="status">Noch keine Tabelle erkannt.</p>}
         <div className="teamCards">
           {sortedTeams.map((team, index) => (
-            <article className="teamCard" key={team.name}>
+            <article className="teamCard" key={`${team.name}-${index}`}>
               <div className="rank">{index + 1}</div>
               <div className="teamMain">
-                <h3>{team.name}</h3>
+                <input className="teamNameInput" value={team.name} onChange={e => updateTeam(index, 'name', e.target.value)} />
                 <div className="stats">
                   <span>Punkte <b>{ratio(team.leaguePointsWon, team.leaguePointsLost)}</b></span>
                   <span>Matches <b>{ratio(team.matchesWon, team.matchesLost)}</b></span>
                   <span>Sätze <b>{ratio(team.setsWon, team.setsLost)}</b></span>
-                  <span>Games <b>{ratio(team.gamesWon, team.gamesLost)}</b></span>
+                  <span>Spiele <b>{ratio(team.gamesWon, team.gamesLost)}</b></span>
                 </div>
               </div>
             </article>
