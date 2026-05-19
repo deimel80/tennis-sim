@@ -1,14 +1,15 @@
 # tennis-sim
 
-Version 5.2.3
+Version 5.2.5
 
-Fix:
-- Restprogramm-Prognosen werden jetzt global einmal berechnet
-- dieselbe Begegnung hat für beide Teams dasselbe Ergebnis, nur gespiegelt
-- Beispiel: Arnsberg 5:4 gegen Marienburg wird bei Marienburg als 4:5 angezeigt
-- Versionsnummer steht am Anfang im Portal: `Version 5.2.3 · tennis-sim`
-- ZIP-Dateiname beginnt mit `v5.2.3`
+Neu:
+- leichter Heimvorteil in der Prognose
+- Heimteam erhält +0,35 Matchpunkte in der Schätzformel
+- der Bonus beeinflusst vor allem knappe Begegnungen
+- klare Kräfteverhältnisse werden dadurch normalerweise nicht umgedreht
+- Versionsnummer steht am Anfang im Portal: `Version 5.2.5 · tennis-sim`
+- ZIP-Dateiname beginnt mit `v5.2.5`
 
 Sichtprüfung:
-- oben steht `Version 5.2.3 · tennis-sim`
-- Restprogramm zeigt gleiche Spiele konsistent gespiegelt
+- oben steht `Version 5.2.5 · tennis-sim`
+- im Logik-Bereich wird der Heimvorteil erklärt
