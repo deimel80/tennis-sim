@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 
-const APP_VERSION = '5.2.4'
+const APP_VERSION = '5.2.5'
+const HOME_ADVANTAGE_MATCHES = 0.35
 
 const exampleText = `Tabelle
  	Rang	Mannschaft	Begegnungen	S	U	N	Punkte	Matches	Sätze	Games
@@ -221,7 +222,7 @@ function expectedResult(fixture, teams, maxMatches) {
   if (!home || !away) return ''
 
   const diff = initialStrength(home) - initialStrength(away)
-  let homeMatches = Math.round(total / 2 + diff / 9)
+  let homeMatches = Math.round(total / 2 + diff / 9 + HOME_ADVANTAGE_MATCHES)
 
   if (total === 9 && homeMatches >= 9 && diff < 28) homeMatches = 8
   if (total === 9 && homeMatches <= 0 && diff > -28) homeMatches = 1
@@ -671,7 +672,7 @@ export default function App() {
           <span>1000 Simulationen</span>
         </div>
 
-        <p className="status">Version {APP_VERSION}: Die Rest-Saison wird 1000-mal simuliert. Sortiert wird nach Ø Tabellenpunkten, danach Ø Matchdifferenz und Ø gewonnenen Matches. Über „Restprogramm anzeigen“ siehst du die global einmal berechneten Ergebnisse.</p>
+        <p className="status">Version {APP_VERSION}: Die Rest-Saison wird 1000-mal simuliert. Sortiert wird nach Ø Tabellenpunkten, danach Ø Matchdifferenz und Ø gewonnenen Matches. In der Spielschätzung ist ein leichter Heimvorteil enthalten. Über „Restprogramm anzeigen“ siehst du die global einmal berechneten Ergebnisse.</p>
 
         <div className="actionRow">
           <button onClick={simulateFullSeason}>Rest-Saison simulieren</button>
@@ -752,7 +753,7 @@ export default function App() {
 
           <div>
             <h3>2. Offene Spiele</h3>
-            <p>Für jedes offene Spiel wird ein Match-Ergebnis geschätzt, zum Beispiel 5:4 oder 6:3. Dieses Ergebnis gilt global für beide Teams und wird nur gespiegelt angezeigt.</p>
+            <p>Für jedes offene Spiel wird ein Match-Ergebnis geschätzt, zum Beispiel 5:4 oder 6:3. Das Heimteam bekommt einen kleinen Bonus von 0,35 Matchpunkten. Das Ergebnis gilt global für beide Teams und wird nur gespiegelt angezeigt.</p>
           </div>
 
           <div>
