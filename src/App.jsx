@@ -404,7 +404,7 @@ export default function App() {
   return (
     <main className="app">
       <section className="hero">
-        <p className="eyebrow">tennis-sim · Version 5.1.0</p>
+        <p className="eyebrow">tennis-sim · Version 5.1.1</p>
         <h1>Tabellenrechner</h1>
         <p>Text aus der Ligaseite kopieren, einfügen und Spieltage simulieren.</p>
       </section>
@@ -501,10 +501,39 @@ export default function App() {
                 <div className="teamBody">
                   <h3>{team.name}</h3>
                   <div className="stats">
+                    <span>Punkte <b>{team.leaguePointsWon}:{team.leaguePointsLost}</b></span>
+                    <span>Matches <b>{team.matchesWon}:{team.matchesLost}</b></span>
+                    <span>Sätze <b>{team.setsWon}:{team.setsLost}</b></span>
+                    <span>Games <b>{team.gamesWon}:{team.gamesLost}</b></span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="head">
+          <h2>4. Saison-Prognose</h2>
+          <span>1000 Simulationen</span>
+        </div>
+        <p className="status">Version 5.1.1: Sortierung nach Ø Tabellenpunkten, Ø Matchdifferenz und Ø gewonnenen Matches.</p>
+        <div className="actionRow">
+          <button onClick={simulateFullSeason}>Rest-Saison simulieren</button>
+          <button className="dark" onClick={() => setSeasonResults([])}>Löschen</button>
+        </div>
+        <div className="seasonList">
+          {seasonResults.map((entry, index) => (
+            <article className="seasonCard" key={entry.name}>
+              <div className="rank">{index + 1}</div>
+              <div className="teamBody">
+                <h3>{entry.name}</h3>
+                <div className="stats">
                   <span>Ø Punkte <b>{entry.avgPoints.toFixed(1)}</b></span>
                   <span>Ø Matchdiff. <b>{entry.avgMatchDiff.toFixed(1)}</b></span>
-                  <span>Ø gew. Matches <b>{entry.avgMatchesWon.toFixed(1)}</b></span>
                   <span>Ø Platz <b>{entry.avgRank.toFixed(1)}</b></span>
+                  <span>Platz 1 <b>{entry.firstPct}%</b></span>
                 </div>
               </div>
             </article>
