@@ -1,16 +1,18 @@
 # tennis-sim
 
-Version 4.1.0 stabil.
+Buildfix-Version 4.0.2
 
-- Textimport
-- Spieltag-Simulation
-- Saison-Prognose
-- realistischere Streuung
-- PNG-Export
-- WhatsApp-Export
-- GitHub Pages: `/tennis-sim/`
+- Vite-Base auf `/tennis-sim/`
+- JSX-Fehler am Dateiende behoben
+- GitHub-Pages-ready
+
+## Upload
+
+Nur den Inhalt dieser ZIP in das Repository hochladen.
+
+## Lokal
 
 ```bash
 npm install
-npm run dev
+npm run build
 ```
