@@ -1,11 +1,8 @@
-# Tennis Tabellenrechner OCR+
+# Tennis Tabellenrechner – Textimport
 
-Version 2.3
+Version 3.0: keine OCR mehr. Kopierten nuLiga-Text einfügen, auswerten, Spieltag simulieren.
 
-- Bild-Vorverarbeitung vor OCR
-- Screenshot wird vergrößert, kontrastiert und entsättigt
-- besser für gelbliche nuLiga-Screenshots
-- toleranterer Tabellenparser
-- toleranterer Spielplanparser
-- Teamnamen direkt korrigierbar
-- kein Demo-Fallback bei echtem Upload
+```bash
+npm install
+npm run dev
+```
