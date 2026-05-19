@@ -338,7 +338,6 @@ function expectedTeamPlan(teamName, teams, fixtures, maxMatches) {
         date: fixture.date || 'ohne Datum',
         opponent,
         resultForTeam: p ? `${ownMatches}:${oppMatches}` : '',
-        originalResult: result,
         points,
         homeAway: isHome ? 'Heim' : 'Auswärts'
       })
@@ -355,7 +354,6 @@ function expectedTeamPlan(teamName, teams, fixtures, maxMatches) {
     }, 0)
   }
 }
-
 
 export default function App() {
   const [sourceText, setSourceText] = useState('')
@@ -445,7 +443,7 @@ export default function App() {
   return (
     <main className="app">
       <section className="hero">
-        <p className="eyebrow">tennis-sim · Version 5.2.0</p>
+        <p className="eyebrow">tennis-sim · Version 5.2.1</p>
         <h1>Tabellenrechner</h1>
         <p>Text aus der Ligaseite kopieren, einfügen und Spieltage simulieren.</p>
       </section>
@@ -559,7 +557,7 @@ export default function App() {
           <h2>4. Saison-Prognose</h2>
           <span>1000 Simulationen</span>
         </div>
-        <p className="status">Version 5.2.0: Sortierung nach Ø Tabellenpunkten, Ø Matchdifferenz und Ø gewonnenen Matches. Über „Restprogramm anzeigen“ siehst du die angenommenen Ergebnisse.</p>
+        <p className="status">Version 5.2.1: Sortierung nach Ø Tabellenpunkten, Ø Matchdifferenz und Ø gewonnenen Matches. Über „Restprogramm anzeigen“ siehst du die angenommenen Ergebnisse.</p>
         <div className="actionRow">
           <button onClick={simulateFullSeason}>Rest-Saison simulieren</button>
           <button className="dark" onClick={() => setSeasonResults([])}>Löschen</button>
@@ -581,33 +579,36 @@ export default function App() {
                   {openDetailsFor === entry.name ? 'Restprogramm ausblenden' : 'Restprogramm anzeigen'}
                 </button>
 
-                {openDetailsFor === entry.name && (() => {
-                  const details = expectedTeamPlan(entry.name, teams, fixtures, maxMatches)
-                  return (
-                    <div className="projectionDetails">
-                      <div className="detailSummary">
-                        <span>Erwartete Restpunkte <b>+{details.restPoints}</b></span>
-                        <span>Erwartete Matchdiff. <b>{details.restMatchDiff > 0 ? '+' : ''}{details.restMatchDiff}</b></span>
-                      </div>
-
-                      {!details.games.length && <p className="empty">Keine offenen Spiele mehr.</p>}
-
-                      {details.games.map((game, detailIndex) => (
-                        <div className="detailGame" key={`${entry.name}-${detailIndex}`}>
-                          <div>
-                            <b>{game.opponent}</b>
-                            <small>{game.date} · {game.homeAway}</small>
+                {openDetailsFor === entry.name && (
+                  <div className="projectionDetails">
+                    {(() => {
+                      const details = expectedTeamPlan(entry.name, teams, fixtures, maxMatches)
+                      return (
+                        <>
+                          <div className="detailSummary">
+                            <span>Erwartete Restpunkte <b>+{details.restPoints}</b></span>
+                            <span>Erwartete Matchdiff. <b>{details.restMatchDiff > 0 ? '+' : ''}{details.restMatchDiff}</b></span>
                           </div>
-                          <div className="detailResult">
-                            <b>{game.resultForTeam}</b>
-                            <small>{game.points} Pkt.</small>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                })()}
-</div>
+
+                          {!details.games.length && <p className="empty">Keine offenen Spiele mehr.</p>}
+
+                          {details.games.map((game, detailIndex) => (
+                            <div className="detailGame" key={`${entry.name}-${detailIndex}`}>
+                              <div>
+                                <b>{game.opponent}</b>
+                                <small>{game.date} · {game.homeAway}</small>
+                              </div>
+                              <div className="detailResult">
+                                <b>{game.resultForTeam}</b>
+                                <small>{game.points} Pkt.</small>
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )
+                    })()}
+                  </div>
+                )}
               </div>
             </article>
           ))}
