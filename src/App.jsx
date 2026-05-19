@@ -357,9 +357,136 @@ function predictedResult(fixture, teams, fixtures, maxMatches) {
   return predictionDetails(fixture, teams, fixtures, maxMatches).result
 }
 
+function predictFixture(fixture, teams, fixtures, maxMatches) {
+  return predictionDetails(fixture, teams, fixtures, maxMatches)
+}
+
 function ratio(a, b) {
   return `${a}:${b}`
 }
+
+
+function applySingleFixture(teams, fixture, resultText) {
+  const home = teams.find(team => team.name === fixture.home)
+  const away = teams.find(team => team.name === fixture.away)
+  const matchPair = pair(resultText)
+
+  if (!home || !away || !matchPair) return
+
+  const [hm, am] = matchPair
+
+  home.played += 1
+  away.played += 1
+
+  home.matchesWon += hm
+  home.matchesLost += am
+  away.matchesWon += am
+  away.matchesLost += hm
+
+  if (hm > am) {
+    home.wins += 1
+    away.losses += 1
+    home.leaguePointsWon += 2
+    away.leaguePointsLost += 2
+  } else if (am > hm) {
+    away.wins += 1
+    home.losses += 1
+    away.leaguePointsWon += 2
+    home.leaguePointsLost += 2
+  } else {
+    home.draws += 1
+    away.draws += 1
+    home.leaguePointsWon += 1
+    home.leaguePointsLost += 1
+    away.leaguePointsWon += 1
+    away.leaguePointsLost += 1
+  }
+}
+
+function randomResultAroundPrediction(prediction, maxMatches) {
+  const total = Number(maxMatches) || 9
+  const p = pair(prediction)
+  if (!p) return prediction
+
+  const baseHome = p[0]
+  const random = Math.random()
+  let shift = 0
+
+  if (random < 0.12) shift = -2
+  else if (random < 0.32) shift = -1
+  else if (random < 0.68) shift = 0
+  else if (random < 0.88) shift = 1
+  else shift = 2
+
+  const home = Math.max(0, Math.min(total, baseHome + shift))
+  return `${home}:${total - home}`
+}
+
+function simulateRemainingSeason(baseTeams, fixtures, maxMatches, iterations = 1000) {
+  const activeTeams = baseTeams.filter(team => !team.withdrawn)
+  if (!activeTeams.length) return []
+
+  const resultMap = {}
+  activeTeams.forEach(team => {
+    resultMap[team.name] = {
+      name: team.name,
+      first: 0,
+      top3: 0,
+      last: 0,
+      rankSum: 0,
+      rankCounts: {}
+    }
+  })
+
+  for (let run = 0; run < iterations; run++) {
+    const simulatedTeams = activeTeams.map(team => ({ ...team }))
+    const playedFixtures = fixtures.filter(fixture => fixture.status === 'played')
+    const openFixtures = fixtures.filter(fixture => fixture.status === 'open')
+
+    for (const fixture of openFixtures) {
+      const prediction = predictFixture(fixture, simulatedTeams, [...playedFixtures], maxMatches).result
+      const randomResult = randomResultAroundPrediction(prediction, maxMatches)
+
+      applySingleFixture(simulatedTeams, fixture, randomResult)
+
+      playedFixtures.push({
+        ...fixture,
+        status: 'played',
+        result: randomResult
+      })
+    }
+
+    const sorted = sortTeams(simulatedTeams, {})
+
+    sorted.forEach((team, index) => {
+      const rank = index + 1
+      const entry = resultMap[team.name]
+      if (!entry) return
+
+      if (rank === 1) entry.first += 1
+      if (rank <= 3) entry.top3 += 1
+      if (rank === sorted.length) entry.last += 1
+
+      entry.rankSum += rank
+      entry.rankCounts[rank] = (entry.rankCounts[rank] || 0) + 1
+    })
+  }
+
+  return Object.values(resultMap)
+    .map(entry => ({
+      ...entry,
+      firstPct: Math.round((entry.first / iterations) * 100),
+      top3Pct: Math.round((entry.top3 / iterations) * 100),
+      lastPct: Math.round((entry.last / iterations) * 100),
+      avgRank: entry.rankSum / iterations
+    }))
+    .sort((a, b) => a.avgRank - b.avgRank)
+}
+
+function formatPercent(value) {
+  return `${Math.round(value)}%`
+}
+
 
 export default function App() {
   const [sourceText, setSourceText] = useState('')
@@ -370,6 +497,7 @@ export default function App() {
   const [selectedDay, setSelectedDay] = useState('alle')
   const [status, setStatus] = useState('Text einfügen und auswerten.')
   const [direct, setDirect] = useState({})
+  const [seasonResults, setSeasonResults] = useState([])
 
   const activeTeams = simulatedTeams.length ? simulatedTeams : sortTeams(teams, direct)
   const days = useMemo(() => {
@@ -398,6 +526,7 @@ export default function App() {
     setMaxMatches(parsed.maxMatches)
     setSelectedDay(firstDay)
     setDirect({})
+    setSeasonResults([])
     setStatus(`Erkannt: ${parsed.teams.length} Teams, ${parsed.fixtures.length} Spiele, ${openFixtures.length} offen.`)
   }
 
@@ -409,6 +538,13 @@ export default function App() {
   function updateFixture(target, field, value) {
     setFixtures(current => current.map(f => f === target ? { ...f, [field]: value } : f))
     setSimulatedTeams([])
+    setSeasonResults([])
+  }
+
+  function runSeasonSimulation() {
+    const results = simulateRemainingSeason(teams, fixtures, maxMatches, 1000)
+    setSeasonResults(results)
+    setStatus(results.length ? 'Rest-Saison 1000-mal simuliert.' : 'Keine Saison-Simulation möglich.')
   }
 
   function simulate() {
@@ -445,6 +581,7 @@ export default function App() {
             setTeams([])
             setFixtures([])
             setSimulatedTeams([])
+            setSeasonResults([])
             setStatus('Gelöscht.')
           }}>Löschen</button>
         </div>
@@ -527,6 +664,39 @@ export default function App() {
             </article>
           ))}
         </div>
+      </section>
+
+      <section className="panel">
+        <div className="head">
+          <h2>4. Saison-Prognose</h2>
+          <span>1000 Simulationen</span>
+        </div>
+
+        <p className="status">Simuliert alle noch offenen Begegnungen zufällig um die jeweilige Schätzung herum. Dadurch entstehen Wahrscheinlichkeiten für Meisterschaft, Top 3 und letzten Platz.</p>
+
+        <div className="actionRow">
+          <button onClick={runSeasonSimulation}>Rest-Saison simulieren</button>
+          <button className="dark" onClick={() => setSeasonResults([])}>Prognose löschen</button>
+        </div>
+
+        {!!seasonResults.length && (
+          <div className="seasonList">
+            {seasonResults.map((entry, index) => (
+              <article className="seasonCard" key={entry.name}>
+                <div className="rank">{index + 1}</div>
+                <div className="teamBody">
+                  <h3>{entry.name}</h3>
+                  <div className="stats">
+                    <span>Ø Platz <b>{entry.avgRank.toFixed(1)}</b></span>
+                    <span>Platz 1 <b>{formatPercent(entry.firstPct)}</b></span>
+                    <span>Top 3 <b>{formatPercent(entry.top3Pct)}</b></span>
+                    <span>Letzter <b>{formatPercent(entry.lastPct)}</b></span>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       {!!tieGroups.length && (

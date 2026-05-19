@@ -125,12 +125,12 @@ button.small { min-height: 40px; padding: 8px 12px; }
 
 .status, .empty, .note { color: #64748b; line-height: 1.45; }
 
-.fixtureList, .teamList, .directGroup {
+.fixtureList, .teamList, .seasonList, .directGroup {
   display: grid;
   gap: 10px;
 }
 
-.fixture, .team, .directRow {
+.fixture, .team, .seasonCard, .directRow {
   border: 1px solid #e5e7eb;
   background: #f8fafc;
   border-radius: 20px;
@@ -194,7 +194,7 @@ button.small { min-height: 40px; padding: 8px 12px; }
   margin-top: 10px;
 }
 
-.team {
+.team, .seasonCard {
   display: grid;
   grid-template-columns: 54px 1fr;
   gap: 12px;
