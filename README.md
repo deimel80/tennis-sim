@@ -1,11 +1,13 @@
 # tennis-sim
 
-Version 5.1.1
+Version 5.2.0
 
-Buildfix für den JSX-Fehler.
+Neu:
+- Restprogramm je Team in der Saison-Prognose
+- erwartete Ergebnisse je offenem Spiel
+- erwartete Restpunkte
+- erwartete Rest-Matchdifferenz
 
 Sichtprüfung:
-- oben steht `tennis-sim · Version 5.1.1`
-- in der Saison-Prognose stehen Ø Punkte, Ø Matchdiff., Ø gew. Matches und Ø Platz
-
-Nur den Inhalt dieser ZIP in das Repository hochladen.
+- oben steht `tennis-sim · Version 5.2.0`
+- in der Saison-Prognose gibt es `Restprogramm anzeigen`
