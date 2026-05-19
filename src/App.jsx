@@ -244,33 +244,117 @@ function applySimulation(baseTeams, fixtures, selectedDay, direct) {
   return { teams: sortTeams(teams, direct), count: selected.length }
 }
 
-function teamStrength(team, fixtures) {
-  const playedFixtures = fixtures.filter(f => f.status === 'played' && (f.home === team.name || f.away === team.name))
-  const tableScore = team.leaguePointsWon * 9 + (team.matchesWon - team.matchesLost) * 1.8 + (team.setsWon - team.setsLost) * 0.35 + (team.gamesWon - team.gamesLost) * 0.035
+function teamAverage(team, maxMatches) {
+  const played = Math.max(1, team.played || 0)
 
-  const formScore = playedFixtures.reduce((sum, fixture) => {
-    const match = pair(fixture.result)
-    const sets = pair(fixture.sets)
-    const games = pair(fixture.games)
-    if (!match) return sum
-    const home = fixture.home === team.name
-    return sum +
-      ((home ? match[0] : match[1]) - (home ? match[1] : match[0])) * 3 +
-      (sets ? ((home ? sets[0] : sets[1]) - (home ? sets[1] : sets[0])) * 0.45 : 0) +
-      (games ? ((home ? games[0] : games[1]) - (home ? games[1] : games[0])) * 0.04 : 0)
-  }, 0)
+  return {
+    matchRatio: (team.matchesWon - team.matchesLost) / played / Math.max(1, maxMatches),
+    setRatio: (team.setsWon - team.setsLost) / played / Math.max(1, maxMatches * 2),
+    gameRatio: (team.gamesWon - team.gamesLost) / played / Math.max(1, maxMatches * 10),
+    pointsPerMatch: team.leaguePointsWon / played
+  }
+}
 
-  return tableScore + formScore
+function directHistory(homeName, awayName, fixtures, maxMatches) {
+  const played = fixtures.filter(fixture => fixture.status === 'played' && (
+    (fixture.home === homeName && fixture.away === awayName) ||
+    (fixture.home === awayName && fixture.away === homeName)
+  ))
+
+  if (!played.length) return null
+
+  const latest = played[played.length - 1]
+  const result = pair(latest.result)
+  if (!result) return null
+
+  const homeWasHome = latest.home === homeName
+  const homeMatches = homeWasHome ? result[0] : result[1]
+
+  return (homeMatches - (maxMatches / 2)) / maxMatches
+}
+
+function commonOpponentScore(homeName, awayName, fixtures, maxMatches) {
+  const homeGames = fixtures.filter(fixture => fixture.status === 'played' && (fixture.home === homeName || fixture.away === homeName))
+  const awayGames = fixtures.filter(fixture => fixture.status === 'played' && (fixture.home === awayName || fixture.away === awayName))
+  const scores = []
+
+  for (const homeFixture of homeGames) {
+    const commonOpponent = homeFixture.home === homeName ? homeFixture.away : homeFixture.home
+    const matchingAwayFixtures = awayGames.filter(awayFixture => awayFixture.home === commonOpponent || awayFixture.away === commonOpponent)
+
+    for (const awayFixture of matchingAwayFixtures) {
+      const homeResult = pair(homeFixture.result)
+      const awayResult = pair(awayFixture.result)
+      if (!homeResult || !awayResult) continue
+
+      const homeOwn = homeFixture.home === homeName ? homeResult[0] : homeResult[1]
+      const homeOpp = homeFixture.home === homeName ? homeResult[1] : homeResult[0]
+      const awayOwn = awayFixture.home === awayName ? awayResult[0] : awayResult[1]
+      const awayOpp = awayFixture.home === awayName ? awayResult[1] : awayResult[0]
+
+      scores.push(((homeOwn - homeOpp) - (awayOwn - awayOpp)) / maxMatches)
+    }
+  }
+
+  if (!scores.length) return 0
+  return scores.reduce((sum, value) => sum + value, 0) / scores.length
+}
+
+function predictionDetails(fixture, teams, fixtures, maxMatches) {
+  const home = teams.find(team => team.name === fixture.home)
+  const away = teams.find(team => team.name === fixture.away)
+  const total = Number(maxMatches) || 9
+
+  if (!home || !away) return { result: '', confidence: '' }
+
+  const homeAverage = teamAverage(home, total)
+  const awayAverage = teamAverage(away, total)
+
+  const tableComponent =
+    (homeAverage.pointsPerMatch - awayAverage.pointsPerMatch) * 0.18 +
+    (homeAverage.matchRatio - awayAverage.matchRatio) * 0.42 +
+    (homeAverage.setRatio - awayAverage.setRatio) * 0.22 +
+    (homeAverage.gameRatio - awayAverage.gameRatio) * 0.10
+
+  const commonComponent = commonOpponentScore(home.name, away.name, fixtures, total) * 0.22
+  const directComponent = directHistory(home.name, away.name, fixtures, total)
+  const directWeighted = directComponent === null ? 0 : directComponent * 0.25
+  const homeBonus = 0.035
+
+  let advantage = tableComponent + commonComponent + directWeighted + homeBonus
+
+  // Am Saisonanfang gibt es sehr wenig Daten. Deshalb werden extreme Tipps gedämpft.
+  const playedTotal = Math.max(1, (home.played || 0) + (away.played || 0))
+  const damping = Math.min(1, 0.45 + playedTotal * 0.12)
+  advantage *= damping
+
+  let homePoints = Math.round(total / 2 + advantage * total)
+
+  // Realistische Begrenzung: 9:0 nur bei sehr starkem Signal.
+  const center = total / 2
+  const cap = total === 9 ? 3.35 : total * 0.36
+  homePoints = Math.max(Math.ceil(center - cap), Math.min(Math.floor(center + cap), homePoints))
+
+  if (total === 9) {
+    if (homePoints >= 9 && advantage < 0.47) homePoints = 8
+    if (homePoints <= 0 && advantage > -0.47) homePoints = 1
+  }
+
+  homePoints = Math.max(0, Math.min(total, homePoints))
+  const awayPoints = total - homePoints
+
+  let confidence = 'vorsichtig'
+  if (Math.abs(advantage) > 0.26) confidence = 'klar'
+  if (Math.abs(advantage) > 0.40) confidence = 'sehr klar'
+
+  return {
+    result: `${homePoints}:${awayPoints}`,
+    confidence
+  }
 }
 
 function predictedResult(fixture, teams, fixtures, maxMatches) {
-  const home = teams.find(t => t.name === fixture.home)
-  const away = teams.find(t => t.name === fixture.away)
-  if (!home || !away) return ''
-  const diff = teamStrength(home, fixtures) - teamStrength(away, fixtures)
-  const total = Number(maxMatches) || 9
-  const homePoints = Math.max(0, Math.min(total, Math.round(total / 2 + diff / 12)))
-  return `${homePoints}:${total - homePoints}`
+  return predictionDetails(fixture, teams, fixtures, maxMatches).result
 }
 
 function ratio(a, b) {
@@ -343,7 +427,7 @@ export default function App() {
 
       <section className="panel help">
         <h2>So kopierst du die Daten</h2>
-        <p>Auf der Ligaseite den Bereich von <b>„Tabelle“ bis zum Ende des „Spielplan“</b> markieren. Danach kopieren und unten einfügen.</p>
+        <p>Auf der Ligaseite den Bereich von <b>„Tabelle“ bis zum Ende des „Spielplan“</b> markieren. Danach kopieren und unten einfügen.</p><p>Die Schätzung nutzt Tabelle, bisherige Ergebnisse, direkte Duelle und Quervergleiche über gemeinsame Gegner. Extreme Tipps werden bewusst gedämpft.</p>
       </section>
 
       <section className="panel">
@@ -391,7 +475,11 @@ export default function App() {
                   <strong>{fixture.away}</strong>
                 </div>
                 {!!fixture.note && <p className="note">{fixture.note}</p>}
-                {!!prediction && <button className="prediction" onClick={() => updateFixture(fixture, 'result', prediction)}>Schätzung übernehmen: {prediction}</button>}
+                {!!prediction && (
+                  <button className="prediction" onClick={() => updateFixture(fixture, 'result', prediction)}>
+                    Schätzung übernehmen: {prediction}
+                  </button>
+                )}
                 <div className="quickGrid">
                   {options.map(option => (
                     <button key={option} className={fixture.result === option ? 'quick active' : 'quick'} onClick={() => updateFixture(fixture, 'result', option)}>
