@@ -1,14 +1,18 @@
 # tennis-sim
 
-Version 4.0.3
+Version 4.0.5
 
-## Fix
+## Fix Saison-Prognose
 
-- Saison-Prognose sortiert jetzt konsequent plausibel nach Stärke + Ø-Platz
-- klare Stärke-Unterschiede aus Punkten/Matches/Sätzen/Games schlagen Monte-Carlo-Rauschen
-- irreführende Anzeige „häufigster Platz“ entfernt
-- Vite-Base: `/tennis-sim/`
+- Sätze/Games werden nur noch für die Ausgangsstärke aus echten Spielen genutzt
+- simulierte Restspiele schreiben nur Punkte und Matchpunkte fort
+- Prognose-Sortierung:
+  1. Ø Tabellenpunkte
+  2. Ø Matchdifferenz
+  3. Ø gewonnene Matches
+  4. Ausgangsstärke als Tiebreaker
+- fachlich sauberer für Tennis-Ligatabellen
 
 ## Upload
 
-Nur den Inhalt der ZIP in das Repository hochladen.
+Nur den Inhalt dieser ZIP in das Repository hochladen.
