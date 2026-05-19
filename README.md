@@ -1,14 +1,11 @@
 # tennis-sim
 
-Version 5.0.0
+Version 5.1.1
 
-Sauber neu erstellte Code-Version.
+Buildfix für den JSX-Fehler.
 
-Die Saison-Prognose sortiert nach:
-1. Ø Tabellenpunkte
-2. Ø Matchdifferenz
-3. Ø gewonnene Matches
-4. Ausgangsstärke als Tiebreaker
+Sichtprüfung:
+- oben steht `tennis-sim · Version 5.1.1`
+- in der Saison-Prognose stehen Ø Punkte, Ø Matchdiff., Ø gew. Matches und Ø Platz
 
-Sätze und Games werden nur aus echten Ergebnissen für die Ausgangsstärke genutzt.
-Offene prognostizierte Spiele schreiben nur Punkte und Matchpunkte fort.
+Nur den Inhalt dieser ZIP in das Repository hochladen.
