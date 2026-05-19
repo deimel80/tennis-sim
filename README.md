@@ -1,18 +1,14 @@
 # tennis-sim
 
-Buildfix-Version 4.0.2
+Version 4.0.3
 
-- Vite-Base auf `/tennis-sim/`
-- JSX-Fehler am Dateiende behoben
-- GitHub-Pages-ready
+## Fix
+
+- Saison-Prognose sortiert jetzt konsequent plausibel nach Stärke + Ø-Platz
+- klare Stärke-Unterschiede aus Punkten/Matches/Sätzen/Games schlagen Monte-Carlo-Rauschen
+- irreführende Anzeige „häufigster Platz“ entfernt
+- Vite-Base: `/tennis-sim/`
 
 ## Upload
 
-Nur den Inhalt dieser ZIP in das Repository hochladen.
-
-## Lokal
-
-```bash
-npm install
-npm run build
-```
+Nur den Inhalt der ZIP in das Repository hochladen.
