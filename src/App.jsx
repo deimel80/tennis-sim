@@ -409,16 +409,22 @@ function randomResultAroundPrediction(prediction, maxMatches) {
   if (!p) return prediction
 
   const baseHome = p[0]
-  const random = Math.random()
-  let shift = 0
+  const margin = Math.abs(baseHome - total / 2)
 
-  if (random < 0.12) shift = -2
-  else if (random < 0.32) shift = -1
-  else if (random < 0.68) shift = 0
-  else if (random < 0.88) shift = 1
-  else shift = 2
+  // Je klarer die Schätzung, desto weniger Zufall.
+  // Bei engen Spielen darf es schwanken, bei deutlichen Kräfteverhältnissen kaum.
+  let shiftPool
+  if (margin >= 3) {
+    shiftPool = [0, 0, 0, 0, 0, 1, -1]
+  } else if (margin >= 2) {
+    shiftPool = [0, 0, 0, 1, -1, 1, -1]
+  } else {
+    shiftPool = [0, 0, 1, -1, 1, -1, 2, -2]
+  }
 
+  const shift = shiftPool[Math.floor(Math.random() * shiftPool.length)]
   const home = Math.max(0, Math.min(total, baseHome + shift))
+
   return `${home}:${total - home}`
 }
 
@@ -480,7 +486,17 @@ function simulateRemainingSeason(baseTeams, fixtures, maxMatches, iterations = 1
       lastPct: Math.round((entry.last / iterations) * 100),
       avgRank: entry.rankSum / iterations
     }))
-    .sort((a, b) => a.avgRank - b.avgRank)
+    .sort((a, b) => {
+      const modalA = Number(Object.entries(a.rankCounts).sort((x, y) => y[1] - x[1])[0]?.[0] || 999)
+      const modalB = Number(Object.entries(b.rankCounts).sort((x, y) => y[1] - x[1])[0]?.[0] || 999)
+      if (modalA !== modalB) return modalA - modalB
+      return a.avgRank - b.avgRank
+    })
+}
+
+function mostLikelyRank(entry) {
+  const best = Object.entries(entry.rankCounts || {}).sort((a, b) => b[1] - a[1])[0]
+  return best ? Number(best[0]) : 0
 }
 
 function formatPercent(value) {
@@ -672,7 +688,7 @@ export default function App() {
           <span>1000 Simulationen</span>
         </div>
 
-        <p className="status">Simuliert alle noch offenen Begegnungen zufällig um die jeweilige Schätzung herum. Dadurch entstehen Wahrscheinlichkeiten für Meisterschaft, Top 3 und letzten Platz.</p>
+        <p className="status">Simuliert alle offenen Begegnungen um die jeweilige Schätzung herum. Klare Kräfteverhältnisse streuen nur wenig, enge Spiele stärker.</p>
 
         <div className="actionRow">
           <button onClick={runSeasonSimulation}>Rest-Saison simulieren</button>
@@ -687,9 +703,9 @@ export default function App() {
                 <div className="teamBody">
                   <h3>{entry.name}</h3>
                   <div className="stats">
+                    <span>häufigster Platz <b>{mostLikelyRank(entry)}</b></span>
                     <span>Ø Platz <b>{entry.avgRank.toFixed(1)}</b></span>
                     <span>Platz 1 <b>{formatPercent(entry.firstPct)}</b></span>
-                    <span>Top 3 <b>{formatPercent(entry.top3Pct)}</b></span>
                     <span>Letzter <b>{formatPercent(entry.lastPct)}</b></span>
                   </div>
                 </div>
