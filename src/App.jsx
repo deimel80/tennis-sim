@@ -12,24 +12,18 @@ Absteiger 	6	TuS Neuenrade 1	1	0	0	1	0:2	1:5	3:11	34:67
 
 Spielplan
 Datum	Heimmannschaft	Gastmannschaft	Matches	Sätze	Games	Spielbericht
-Sa.	09.05.2026 13:00	 	TuS Neuenrade 1	Schwelmer TC RW 1	1:5	3:11	34:67	anzeigen 
-So.	10.05.2026 10:00	 	TC Halver 1960 1	TC Lössel-Roden 2	5:1	11:3	71:45	anzeigen 
- 	 	 	TC Halden 2000 1	TC Menden 1	1:5	2:10	40:68	anzeigen 
-Sa.	30.05.2026 13:00	 	TC Menden 1	TuS Neuenrade 1	 	 	 	ursprünglich am 31.05. 10:00 
-So.	31.05.2026 10:00	 	TC Lössel-Roden 2	TC Halden 2000 1	 	 	 	offen 
+Sa.	09.05.2026 13:00	 	TuS Neuenrade 1	Schwelmer TC RW 1	1:5	3:11	34:67	anzeigen
+So.	10.05.2026 10:00	 	TC Halver 1960 1	TC Lössel-Roden 2	5:1	11:3	71:45	anzeigen
+ 	 	 	TC Halden 2000 1	TC Menden 1	1:5	2:10	40:68	anzeigen
+Sa.	30.05.2026 13:00	 	TC Menden 1	TuS Neuenrade 1	 	 	 	ursprünglich am 31.05. 10:00
+So.	31.05.2026 10:00	 	TC Lössel-Roden 2	TC Halden 2000 1	 	 	 	offen
  	 	 	Schwelmer TC RW 1	TC Halver 1960 1	 	 	 	offen`
 
-function clean(value) {
-  return String(value || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim()
-}
+const clean = value => String(value || '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim()
 
 function pair(value) {
-  const match = String(value || '').trim().replace(/\s/g, '').replace(/[;/-]/g, ':').match(/^(\d+):(\d+)$/)
-  return match ? [Number(match[1]), Number(match[2])] : null
-}
-
-function ratio(a, b) {
-  return `${a}:${b}`
+  const m = clean(value).replace(/\s/g, '').replace(/[;/-]/g, ':').match(/^(\d+):(\d+)$/)
+  return m ? [Number(m[1]), Number(m[2])] : null
 }
 
 function splitLine(line) {
@@ -41,7 +35,6 @@ function parseTableRow(line) {
   const cells = splitLine(line).filter(Boolean)
   const joined = clean(line)
   if (/rang|mannschaft|begegnungen|punkte|matches|sätze|saetze|games/i.test(joined)) return null
-  if (cells.filter(cell => pair(cell)).length < 4) return null
 
   const rankIndex = cells.findIndex(cell => /^\d+$/.test(cell))
   if (rankIndex < 0) return null
@@ -50,8 +43,10 @@ function parseTableRow(line) {
   const matches = pair(cells[rankIndex + 7])
   const sets = pair(cells[rankIndex + 8])
   const games = pair(cells[rankIndex + 9])
+  if (!leaguePoints || !matches || !sets || !games) return null
+
   const name = clean(cells[rankIndex + 1]).replace(/^Aufsteiger\s+/i, '').replace(/^Absteiger\s+/i, '')
-  if (!name || !leaguePoints || !matches || !sets || !games) return null
+  if (!name) return null
 
   return {
     name,
@@ -76,8 +71,10 @@ function parseTableRow(line) {
 function findTeamAtStart(text, teams) {
   const normalized = clean(text).toLowerCase()
   const sorted = [...teams].sort((a, b) => b.name.length - a.name.length)
-  const hit = sorted.find(team => normalized.startsWith(team.name.toLowerCase()))
-  return hit ? hit.name : ''
+  for (const team of sorted) {
+    if (normalized.startsWith(team.name.toLowerCase())) return team.name
+  }
+  return ''
 }
 
 function parseFixtureLine(line, teams, lastDate) {
@@ -117,21 +114,17 @@ function parseLeagueText(text) {
   const planStart = lines.findIndex(line => /Spielplan/i.test(line))
   const tableLines = lines.slice(tableStart >= 0 ? tableStart + 1 : 0, planStart >= 0 ? planStart : lines.length)
   const teams = tableLines.map(parseTableRow).filter(Boolean)
+
   const fixtures = []
   let lastDate = ''
-
   if (planStart >= 0) {
     for (const line of lines.slice(planStart + 1)) {
       const dateMatch = clean(line).match(/(?:Mo\.|Di\.|Mi\.|Do\.|Fr\.|Sa\.|So\.)?\s*\d{2}\.\d{2}\.\d{4}\s+\d{1,2}:\d{2}/i)
       if (dateMatch) lastDate = clean(dateMatch[0])
       const parsed = parseFixtureLine(line, teams, lastDate)
-      if (parsed) {
-        fixtures.push(parsed)
-        if (parsed.date) lastDate = parsed.date
-      }
+      if (parsed) fixtures.push(parsed)
     }
   }
-
   return { teams, fixtures, maxMatches: inferMaxMatches(teams, fixtures) }
 }
 
@@ -173,29 +166,52 @@ function sortTeams(teams, direct = {}) {
     if (direct[keyBA] === 'a') return 1
     if (direct[keyBA] === 'b') return -1
 
-    const mdA = a.matchesWon - a.matchesLost
-    const mdB = b.matchesWon - b.matchesLost
-    if (mdB !== mdA) return mdB - mdA
+    const matchDiffA = a.matchesWon - a.matchesLost
+    const matchDiffB = b.matchesWon - b.matchesLost
+    if (matchDiffB !== matchDiffA) return matchDiffB - matchDiffA
     if (b.matchesWon !== a.matchesWon) return b.matchesWon - a.matchesWon
 
-    const sdA = a.setsWon - a.setsLost
-    const sdB = b.setsWon - b.setsLost
-    if (sdB !== sdA) return sdB - sdA
+    const setDiffA = a.setsWon - a.setsLost
+    const setDiffB = b.setsWon - b.setsLost
+    if (setDiffB !== setDiffA) return setDiffB - setDiffA
     if (b.setsWon !== a.setsWon) return b.setsWon - a.setsWon
 
-    const gdA = a.gamesWon - a.gamesLost
-    const gdB = b.gamesWon - b.gamesLost
-    if (gdB !== gdA) return gdB - gdA
+    const gameDiffA = a.gamesWon - a.gamesLost
+    const gameDiffB = b.gamesWon - b.gamesLost
+    if (gameDiffB !== gameDiffA) return gameDiffB - gameDiffA
     return b.gamesWon - a.gamesWon
   })
 }
 
+function initialStrength(team) {
+  const played = Math.max(1, team.played || 0)
+  return (
+    (team.leaguePointsWon / played) * 10 +
+    ((team.matchesWon - team.matchesLost) / played) * 3 +
+    ((team.setsWon - team.setsLost) / played) * 0.35 +
+    ((team.gamesWon - team.gamesLost) / played) * 0.035
+  )
+}
+
+function expectedResult(fixture, teams, maxMatches) {
+  const home = teams.find(t => t.name === fixture.home)
+  const away = teams.find(t => t.name === fixture.away)
+  const total = Number(maxMatches) || 9
+  if (!home || !away) return ''
+  const diff = initialStrength(home) - initialStrength(away)
+  let homeMatches = Math.round(total / 2 + diff / 9)
+  if (total === 9 && homeMatches >= 9 && diff < 28) homeMatches = 8
+  if (total === 9 && homeMatches <= 0 && diff > -28) homeMatches = 1
+  homeMatches = Math.max(0, Math.min(total, homeMatches))
+  return `${homeMatches}:${total - homeMatches}`
+}
+
 function applySingleFixture(teams, fixture, resultText) {
-  const home = teams.find(team => team.name === fixture.home)
-  const away = teams.find(team => team.name === fixture.away)
-  const result = pair(resultText)
-  if (!home || !away || !result) return
-  const [hm, am] = result
+  const home = teams.find(t => t.name === fixture.home)
+  const away = teams.find(t => t.name === fixture.away)
+  const p = pair(resultText)
+  if (!home || !away || !p) return
+  const [hm, am] = p
   home.played += 1
   away.played += 1
   home.matchesWon += hm
@@ -224,194 +240,82 @@ function applySingleFixture(teams, fixture, resultText) {
 
 function applySimulation(baseTeams, fixtures, selectedDay, direct) {
   const teams = baseTeams.map(team => ({ ...team }))
-  const selected = fixtures.filter(fixture => fixture.status === 'open' && (selectedDay === 'alle' || fixtureDay(fixture.date) === selectedDay) && pair(fixture.result))
-  selected.forEach(fixture => {
-    applySingleFixture(teams, fixture, fixture.result)
-    const home = teams.find(team => team.name === fixture.home)
-    const away = teams.find(team => team.name === fixture.away)
-    const setPair = pair(fixture.sets)
-    const gamePair = pair(fixture.games)
-    if (home && away && setPair) {
-      home.setsWon += setPair[0]
-      home.setsLost += setPair[1]
-      away.setsWon += setPair[1]
-      away.setsLost += setPair[0]
-    }
-    if (home && away && gamePair) {
-      home.gamesWon += gamePair[0]
-      home.gamesLost += gamePair[1]
-      away.gamesWon += gamePair[1]
-      away.gamesLost += gamePair[0]
-    }
-  })
+  const selected = fixtures.filter(f => f.status === 'open' && (selectedDay === 'alle' || fixtureDay(f.date) === selectedDay) && pair(f.result))
+  selected.forEach(fixture => applySingleFixture(teams, fixture, fixture.result))
   return { teams: sortTeams(teams, direct), count: selected.length }
 }
 
-function teamAverage(team, maxMatches) {
-  const played = Math.max(1, team.played || 0)
-  return {
-    matchRatio: (team.matchesWon - team.matchesLost) / played / Math.max(1, maxMatches),
-    setRatio: (team.setsWon - team.setsLost) / played / Math.max(1, maxMatches * 2),
-    gameRatio: (team.gamesWon - team.gamesLost) / played / Math.max(1, maxMatches * 10),
-    pointsPerMatch: team.leaguePointsWon / played
-  }
-}
-
-function commonOpponentScore(homeName, awayName, fixtures, maxMatches) {
-  const homeGames = fixtures.filter(f => f.status === 'played' && (f.home === homeName || f.away === homeName))
-  const awayGames = fixtures.filter(f => f.status === 'played' && (f.home === awayName || f.away === awayName))
-  const scores = []
-  for (const homeFixture of homeGames) {
-    const common = homeFixture.home === homeName ? homeFixture.away : homeFixture.home
-    for (const awayFixture of awayGames.filter(f => f.home === common || f.away === common)) {
-      const hp = pair(homeFixture.result)
-      const ap = pair(awayFixture.result)
-      if (!hp || !ap) continue
-      const hOwn = homeFixture.home === homeName ? hp[0] : hp[1]
-      const hOpp = homeFixture.home === homeName ? hp[1] : hp[0]
-      const aOwn = awayFixture.home === awayName ? ap[0] : ap[1]
-      const aOpp = awayFixture.home === awayName ? ap[1] : ap[0]
-      scores.push(((hOwn - hOpp) - (aOwn - aOpp)) / maxMatches)
-    }
-  }
-  return scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0
-}
-
-function directHistory(homeName, awayName, fixtures, maxMatches) {
-  const played = fixtures.filter(f => f.status === 'played' && ((f.home === homeName && f.away === awayName) || (f.home === awayName && f.away === homeName)))
-  if (!played.length) return null
-  const latest = played[played.length - 1]
-  const p = pair(latest.result)
-  if (!p) return null
-  const homeWasHome = latest.home === homeName
-  const homeMatches = homeWasHome ? p[0] : p[1]
-  return (homeMatches - maxMatches / 2) / maxMatches
-}
-
-function predictFixture(fixture, teams, fixtures, maxMatches) {
-  const home = teams.find(team => team.name === fixture.home)
-  const away = teams.find(team => team.name === fixture.away)
-  const total = Number(maxMatches) || 9
-  if (!home || !away) return { result: '', confidence: '' }
-
-  const h = teamAverage(home, total)
-  const a = teamAverage(away, total)
-  let advantage =
-    (h.pointsPerMatch - a.pointsPerMatch) * 0.18 +
-    (h.matchRatio - a.matchRatio) * 0.42 +
-    (h.setRatio - a.setRatio) * 0.22 +
-    (h.gameRatio - a.gameRatio) * 0.10 +
-    commonOpponentScore(home.name, away.name, fixtures, total) * 0.22 +
-    0.035
-  const direct = directHistory(home.name, away.name, fixtures, total)
-  if (direct !== null) advantage += direct * 0.25
-  advantage *= Math.min(1, 0.45 + Math.max(1, home.played + away.played) * 0.12)
-
-  let homePoints = Math.round(total / 2 + advantage * total)
-  const cap = total === 9 ? 3.35 : total * 0.36
-  homePoints = Math.max(Math.ceil(total / 2 - cap), Math.min(Math.floor(total / 2 + cap), homePoints))
-  if (total === 9 && homePoints >= 9 && advantage < 0.47) homePoints = 8
-  if (total === 9 && homePoints <= 0 && advantage > -0.47) homePoints = 1
-  homePoints = Math.max(0, Math.min(total, homePoints))
-
-  let confidence = 'vorsichtig'
-  if (Math.abs(advantage) > 0.26) confidence = 'klar'
-  if (Math.abs(advantage) > 0.40) confidence = 'sehr klar'
-  return { result: `${homePoints}:${total - homePoints}`, confidence }
-}
-
-function randomResultAroundPrediction(prediction, maxMatches) {
+function randomNearPrediction(prediction, maxMatches) {
   const total = Number(maxMatches) || 9
   const p = pair(prediction)
   if (!p) return prediction
-  const margin = Math.abs(p[0] - total / 2)
-  let pool
-  if (margin >= 2.5) pool = [0, 0, 0, 0, 0, 0, 1, -1]
-  else if (margin >= 1.5) pool = [0, 0, 0, 0, 1, -1]
-  else pool = [0, 0, 0, 1, -1, 1, -1]
+  const baseHome = p[0]
+  const margin = Math.abs(baseHome - total / 2)
+  const pool = margin >= 2.5 ? [0, 0, 0, 1, -1] : margin >= 1.5 ? [0, 0, 1, -1] : [0, 0, 1, -1, 1, -1]
   const shift = pool[Math.floor(Math.random() * pool.length)]
-  const home = Math.max(0, Math.min(total, p[0] + shift))
+  const home = Math.max(0, Math.min(total, baseHome + shift))
   return `${home}:${total - home}`
 }
 
-function seasonStrength(team, maxMatches) {
-  const played = Math.max(1, team.played || 0)
-  return (team.leaguePointsWon / played) * 12 + ((team.matchesWon - team.matchesLost) / played) * 2.8 + ((team.setsWon - team.setsLost) / played) * 0.45 + ((team.gamesWon - team.gamesLost) / played) * 0.045
-}
-
-function mostLikelyRank(entry) {
-  const best = Object.entries(entry.rankCounts || {}).sort((a, b) => b[1] - a[1])[0]
-  return best ? Number(best[0]) : 0
-}
-
-function compareSeasonProjection(a, b, maxMatches) {
-  const strengthDiff = (b.baseStrength || 0) - (a.baseStrength || 0)
-  if (Math.abs(strengthDiff) > 0.01) return strengthDiff
-  return a.avgRank - b.avgRank
-}
-
-
-function simulateRemainingSeason(baseTeams, fixtures, maxMatches, iterations = 1000) {
-  const activeTeams = baseTeams.filter(team => !team.withdrawn)
+function simulateSeason(baseTeams, fixtures, maxMatches, iterations = 1000) {
+  const activeTeams = baseTeams.filter(t => !t.withdrawn)
   const resultMap = {}
   activeTeams.forEach(team => {
-    resultMap[team.name] = { name: team.name, baseStrength: seasonStrength(team, maxMatches), first: 0, last: 0, rankSum: 0, rankCounts: {} }
-  })
-  for (let i = 0; i < iterations; i++) {
-    const simulated = activeTeams.map(team => ({ ...team }))
-    const playedFixtures = fixtures.filter(f => f.status === 'played')
-    const openFixtures = fixtures.filter(f => f.status === 'open')
-    for (const fixture of openFixtures) {
-      const prediction = predictFixture(fixture, simulated, playedFixtures, maxMatches).result
-      const randomResult = randomResultAroundPrediction(prediction, maxMatches)
-      applySingleFixture(simulated, fixture, randomResult)
-      playedFixtures.push({ ...fixture, status: 'played', result: randomResult })
+    resultMap[team.name] = {
+      name: team.name,
+      baseStrength: initialStrength(team),
+      pointsSum: 0,
+      matchDiffSum: 0,
+      matchesWonSum: 0,
+      rankSum: 0,
+      first: 0,
+      last: 0
     }
-    sortTeams(simulated).forEach((team, index) => {
-      const rank = index + 1
+  })
+  for (let run = 0; run < iterations; run++) {
+    const teams = activeTeams.map(t => ({ ...t }))
+    fixtures.filter(f => f.status === 'open').forEach(fixture => {
+      const prediction = expectedResult(fixture, teams, maxMatches)
+      const randomResult = randomNearPrediction(prediction, maxMatches)
+      applySingleFixture(teams, fixture, randomResult)
+    })
+    const sorted = sortTeams(teams, {})
+    sorted.forEach((team, index) => {
       const entry = resultMap[team.name]
-      if (!entry) return
-      if (rank === 1) entry.first += 1
-      if (rank === simulated.length) entry.last += 1
+      const rank = index + 1
+      entry.pointsSum += team.leaguePointsWon
+      entry.matchDiffSum += team.matchesWon - team.matchesLost
+      entry.matchesWonSum += team.matchesWon
       entry.rankSum += rank
-      entry.rankCounts[rank] = (entry.rankCounts[rank] || 0) + 1
+      if (rank === 1) entry.first += 1
+      if (rank === sorted.length) entry.last += 1
     })
   }
-  return Object.values(resultMap).map(entry => ({ ...entry, firstPct: Math.round(entry.first / iterations * 100), lastPct: Math.round(entry.last / iterations * 100), avgRank: entry.rankSum / iterations })).sort((a, b) => {
-    const modalA = mostLikelyRank(a) || 999
-    const modalB = mostLikelyRank(b) || 999
-    if (modalA !== modalB) return modalA - modalB
-    if (Math.abs(a.avgRank - b.avgRank) > 0.05) return a.avgRank - b.avgRank
-    return b.baseStrength - a.baseStrength
-  })
+  return Object.values(resultMap)
+    .map(entry => ({
+      ...entry,
+      avgPoints: entry.pointsSum / iterations,
+      avgMatchDiff: entry.matchDiffSum / iterations,
+      avgMatchesWon: entry.matchesWonSum / iterations,
+      avgRank: entry.rankSum / iterations,
+      firstPct: Math.round(entry.first / iterations * 100),
+      lastPct: Math.round(entry.last / iterations * 100)
+    }))
+    .sort((a, b) => {
+      if (Math.abs(b.avgPoints - a.avgPoints) > 0.01) return b.avgPoints - a.avgPoints
+      if (Math.abs(b.avgMatchDiff - a.avgMatchDiff) > 0.01) return b.avgMatchDiff - a.avgMatchDiff
+      if (Math.abs(b.avgMatchesWon - a.avgMatchesWon) > 0.01) return b.avgMatchesWon - a.avgMatchesWon
+      return b.baseStrength - a.baseStrength
+    })
 }
 
-function formatPercent(value) {
-  return `${Math.round(value)}%`
-}
-
-function exportTableText(activeTeams, statusText) {
-  const lines = ['🎾 tennis-sim', '', statusText || '', '']
-  activeTeams.forEach((team, index) => {
+function exportText(teams) {
+  const lines = ['🎾 tennis-sim', '', 'Aktuelle Tabelle', '']
+  teams.forEach((team, index) => {
     lines.push(`${index + 1}. ${team.name}`)
-    lines.push(`   Punkte ${ratio(team.leaguePointsWon, team.leaguePointsLost)} | Matches ${ratio(team.matchesWon, team.matchesLost)} | Sätze ${ratio(team.setsWon, team.setsLost)}`)
+    lines.push(`   Punkte ${team.leaguePointsWon}:${team.leaguePointsLost} · Matches ${team.matchesWon}:${team.matchesLost}`)
   })
   return lines.join('\n')
-}
-
-async function copyOrShareText(text) {
-  if (!text) return 'Kein Export möglich.'
-  if (navigator.share) {
-    try {
-      await navigator.share({ text })
-      return 'Teilen geöffnet.'
-    } catch {}
-  }
-  if (navigator.clipboard) {
-    await navigator.clipboard.writeText(text)
-    return 'Export kopiert.'
-  }
-  return 'Nicht unterstützt.'
 }
 
 export default function App() {
@@ -423,38 +327,31 @@ export default function App() {
   const [maxMatches, setMaxMatches] = useState(9)
   const [selectedDay, setSelectedDay] = useState('alle')
   const [status, setStatus] = useState('Text einfügen und auswerten.')
+  const [exportBox, setExportBox] = useState('')
   const [direct, setDirect] = useState({})
-  const [exportText, setExportText] = useState('')
   const exportRef = useRef(null)
 
   const activeTeams = simulatedTeams.length ? simulatedTeams : sortTeams(teams, direct)
+
   const days = useMemo(() => {
     const values = [...new Set(fixtures.filter(f => f.status === 'open').map(f => fixtureDay(f.date)))]
     return values.length ? values : ['alle']
   }, [fixtures])
+
   const visibleFixtures = fixtures.filter(f => f.status === 'open' && (selectedDay === 'alle' || fixtureDay(f.date) === selectedDay))
   const options = resultOptions(maxMatches)
-  const tieGroups = useMemo(() => {
-    const groups = {}
-    activeTeams.forEach(team => {
-      groups[team.leaguePointsWon] ||= []
-      groups[team.leaguePointsWon].push(team)
-    })
-    return Object.values(groups).filter(group => group.length > 1)
-  }, [activeTeams])
 
   function parseText(text) {
     const parsed = parseLeagueText(text)
-    const openFixtures = parsed.fixtures.filter(f => f.status === 'open')
+    const openCount = parsed.fixtures.filter(f => f.status === 'open').length
+    const firstOpen = parsed.fixtures.find(f => f.status === 'open')
     setTeams(parsed.teams)
     setFixtures(parsed.fixtures)
     setSimulatedTeams([])
     setSeasonResults([])
-    setExportText('')
     setMaxMatches(parsed.maxMatches)
-    setSelectedDay(openFixtures[0] ? fixtureDay(openFixtures[0].date) : 'alle')
-    setDirect({})
-    setStatus(`Erkannt: ${parsed.teams.length} Teams, ${parsed.fixtures.length} Spiele, ${openFixtures.length} offen.`)
+    setSelectedDay(firstOpen ? fixtureDay(firstOpen.date) : 'alle')
+    setStatus(`Erkannt: ${parsed.teams.length} Teams, ${parsed.fixtures.length} Spiele, ${openCount} offen.`)
   }
 
   function loadExample() {
@@ -468,56 +365,71 @@ export default function App() {
     setSeasonResults([])
   }
 
-  function simulate() {
+  function simulateSelected() {
     const result = applySimulation(teams, fixtures, selectedDay, direct)
     setSimulatedTeams(result.teams)
+    setSeasonResults([])
     setStatus(result.count ? `${result.count} Begegnung(en) berechnet.` : 'Kein gültiges Ergebnis ausgewählt.')
   }
 
-  function runSeasonSimulation() {
-    const results = simulateRemainingSeason(teams, fixtures, maxMatches, 1000)
-    setSeasonResults(results)
-    setStatus(results.length ? 'Rest-Saison 1000-mal simuliert.' : 'Keine Saison-Simulation möglich.')
+  function simulateFullSeason() {
+    const result = simulateSeason(teams, fixtures, maxMatches, 1000)
+    setSeasonResults(result)
+    setStatus('Rest-Saison 1000-mal simuliert.')
+  }
+
+  async function copyExport() {
+    const text = exportText(activeTeams)
+    setExportBox(text)
+    if (navigator.share) {
+      try {
+        await navigator.share({ text })
+        return
+      } catch {}
+    }
+    if (navigator.clipboard) await navigator.clipboard.writeText(text)
+    setStatus('Export kopiert.')
   }
 
   async function exportImage() {
     if (!exportRef.current) return
     const canvas = await html2canvas(exportRef.current, { backgroundColor: '#ffffff', scale: 2 })
     const link = document.createElement('a')
-    link.download = 'tennis-sim.png'
     link.href = canvas.toDataURL('image/png')
+    link.download = 'tennis-sim.png'
     link.click()
     setStatus('Bild exportiert.')
-  }
-
-  async function shareTable() {
-    const text = exportTableText(activeTeams, simulatedTeams.length ? 'Simulierte Tabelle' : 'Aktuelle Tabelle')
-    setExportText(text)
-    setStatus(await copyOrShareText(text))
   }
 
   return (
     <main className="app">
       <section className="hero">
-        <p className="eyebrow">Tennis · Tabellen-Simulation</p>
-        <h1>tennis-sim</h1>
-        <p>Text aus der Ligaseite kopieren, einfügen und kommende Spieltage simulieren.</p>
+        <p className="eyebrow">tennis-sim · Version 5.1.0</p>
+        <h1>Tabellenrechner</h1>
+        <p>Text aus der Ligaseite kopieren, einfügen und Spieltage simulieren.</p>
       </section>
 
       <section className="panel help">
         <h2>So kopierst du die Daten</h2>
-        <p>Auf der Ligaseite den Bereich von <b>„Tabelle“ bis zum Ende des „Spielplan“</b> markieren. Danach kopieren und unten einfügen.</p>
+        <p>Auf der Ligaseite den Bereich von <b>„Tabelle“ bis zum Ende des „Spielplan“</b> markieren, kopieren und unten einfügen.</p>
       </section>
 
       <section className="panel">
         <div className="head">
-          <h2>1. Daten einfügen</h2>
+          <h2>1. Daten</h2>
           <button className="small dark" onClick={loadExample}>Beispiel</button>
         </div>
-        <textarea className="source" placeholder="Hier den kopierten Tabellen- und Spielplantext einfügen..." value={sourceText} onChange={event => setSourceText(event.target.value)} />
+        <textarea className="source" value={sourceText} onChange={e => setSourceText(e.target.value)} placeholder="Hier Tabellen- und Spielplantext einfügen..." />
         <div className="actionRow">
           <button onClick={() => parseText(sourceText)}>Text auswerten</button>
-          <button className="dark" onClick={() => { setSourceText(''); setTeams([]); setFixtures([]); setSimulatedTeams([]); setSeasonResults([]); setExportText(''); setStatus('Gelöscht.') }}>Löschen</button>
+          <button className="dark" onClick={() => {
+            setSourceText('')
+            setTeams([])
+            setFixtures([])
+            setSimulatedTeams([])
+            setSeasonResults([])
+            setStatus('Gelöscht.')
+          }}>Löschen</button>
         </div>
         <p className="status">{status}</p>
       </section>
@@ -525,7 +437,7 @@ export default function App() {
       <section className="panel">
         <div className="head">
           <h2>2. Spieltag</h2>
-          <select value={selectedDay} onChange={event => { setSelectedDay(event.target.value); setSimulatedTeams([]); setSeasonResults([]) }}>
+          <select value={selectedDay} onChange={e => setSelectedDay(e.target.value)}>
             {days.map(day => <option key={day} value={day}>{day}</option>)}
             <option value="alle">alle offenen Spiele</option>
           </select>
@@ -533,56 +445,72 @@ export default function App() {
         {!visibleFixtures.length && <p className="empty">Keine offenen Spiele erkannt.</p>}
         <div className="fixtureList">
           {visibleFixtures.map(fixture => {
-            const prediction = predictFixture(fixture, teams, fixtures, maxMatches)
+            const prediction = expectedResult(fixture, teams, maxMatches)
             return (
               <article className="fixture" key={`${fixture.date}-${fixture.home}-${fixture.away}`}>
                 <div className="fixtureDate">{fixture.date || 'ohne Datum'}</div>
-                <div className="teams"><strong>{fixture.home}</strong><span>gegen</span><strong>{fixture.away}</strong></div>
+                <div className="teams">
+                  <strong>{fixture.home}</strong>
+                  <span>gegen</span>
+                  <strong>{fixture.away}</strong>
+                </div>
                 {!!fixture.note && <p className="note">{fixture.note}</p>}
-                {!!prediction.result && <button className="prediction" onClick={() => updateFixture(fixture, 'result', prediction.result)}>Schätzung übernehmen: {prediction.result} · {prediction.confidence}</button>}
+                {!!prediction && (
+                  <button className="prediction" onClick={() => updateFixture(fixture, 'result', prediction)}>
+                    Schätzung übernehmen: {prediction}
+                  </button>
+                )}
                 <div className="quickGrid">
-                  {options.map(option => <button key={option} className={fixture.result === option ? 'quick active' : 'quick'} onClick={() => updateFixture(fixture, 'result', option)}>{option}</button>)}
+                  {options.map(option => (
+                    <button key={option} className={fixture.result === option ? 'quick active' : 'quick'} onClick={() => updateFixture(fixture, 'result', option)}>
+                      {option}
+                    </button>
+                  ))}
                 </div>
                 <div className="inputGrid">
-                  <input inputMode="text" placeholder="Matches" value={fixture.result} onChange={event => updateFixture(fixture, 'result', event.target.value)} />
-                  <input inputMode="text" placeholder="Sätze optional" value={fixture.sets} onChange={event => updateFixture(fixture, 'sets', event.target.value)} />
-                  <input inputMode="text" placeholder="Games optional" value={fixture.games} onChange={event => updateFixture(fixture, 'games', event.target.value)} />
+                  <input inputMode="text" placeholder="Matches" value={fixture.result} onChange={e => updateFixture(fixture, 'result', e.target.value)} />
+                  <input inputMode="text" placeholder="Sätze optional" value={fixture.sets} onChange={e => updateFixture(fixture, 'sets', e.target.value)} />
+                  <input inputMode="text" placeholder="Games optional" value={fixture.games} onChange={e => updateFixture(fixture, 'games', e.target.value)} />
                 </div>
               </article>
             )
           })}
         </div>
         <div className="actionRow">
-          <button onClick={simulate}>Berechnen</button>
+          <button onClick={simulateSelected}>Berechnen</button>
           <button className="dark" onClick={() => setSimulatedTeams([])}>Zurücksetzen</button>
         </div>
       </section>
 
       <section className="panel">
-        <div className="head"><h2>3. Tabelle</h2><span>{activeTeams.length} Teams · {maxMatches} Matches</span></div>
-        <div className="actionRow"><button onClick={exportImage}>PNG exportieren</button><button className="dark" onClick={shareTable}>WhatsApp Export</button></div>
-        {!!exportText && <textarea className="exportBox" value={exportText} readOnly />}
+        <div className="head">
+          <h2>3. Tabelle</h2>
+          <span>{activeTeams.length} Teams · {maxMatches} Matches</span>
+        </div>
+        <div className="actionRow">
+          <button onClick={exportImage}>PNG exportieren</button>
+          <button className="dark" onClick={copyExport}>WhatsApp Export</button>
+        </div>
+        {!!exportBox && <textarea className="exportBox" readOnly value={exportBox} />}
         <div ref={exportRef} className="exportImageCard">
           {!activeTeams.length && <p className="empty">Noch keine Tabelle erkannt.</p>}
           <div className="teamList">
             {activeTeams.map((team, index) => (
               <article className={`team ${team.promotion ? 'promotion' : ''} ${team.relegation ? 'relegation' : ''}`} key={team.name}>
                 <div className="rank">{index + 1}</div>
-                <div className="teamBody"><h3>{team.name}</h3><div className="stats"><span>Punkte <b>{ratio(team.leaguePointsWon, team.leaguePointsLost)}</b></span><span>Matches <b>{ratio(team.matchesWon, team.matchesLost)}</b></span><span>Sätze <b>{ratio(team.setsWon, team.setsLost)}</b></span><span>Games <b>{ratio(team.gamesWon, team.gamesLost)}</b></span></div></div>
-              </article>
-            ))}
-          </div>
+                <div className="teamBody">
+                  <h3>{team.name}</h3>
+                  <div className="stats">
+                  <span>Ø Punkte <b>{entry.avgPoints.toFixed(1)}</b></span>
+                  <span>Ø Matchdiff. <b>{entry.avgMatchDiff.toFixed(1)}</b></span>
+                  <span>Ø gew. Matches <b>{entry.avgMatchesWon.toFixed(1)}</b></span>
+                  <span>Ø Platz <b>{entry.avgRank.toFixed(1)}</b></span>
+                </div>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
-
-      <section className="panel">
-        <div className="head"><h2>4. Saison-Prognose</h2><span>1000 Simulationen</span></div>
-        <p className="status">Simuliert alle offenen Begegnungen. Klare Kräfteverhältnisse streuen nur wenig, enge Spiele stärker. Die Sortierung nutzt die Stärke aus Punkten, Matches, Sätzen und Games als Plausibilitätsbremse.</p>
-        <div className="actionRow"><button onClick={runSeasonSimulation}>Rest-Saison simulieren</button><button className="dark" onClick={() => setSeasonResults([])}>Prognose löschen</button></div>
-        {!!seasonResults.length && <div className="seasonList">{seasonResults.map((entry, index) => <article className="seasonCard" key={entry.name}><div className="rank">{index + 1}</div><div className="teamBody"><h3>{entry.name}</h3><div className="stats"><span>häufigster Platz <b>{mostLikelyRank(entry)}</b></span><span>Ø Platz <b>{entry.avgRank.toFixed(1)}</b></span><span>Stärke <b>{entry.baseStrength.toFixed(1)}</b></span><span>Letzter <b>{formatPercent(entry.lastPct)}</b></span></div></div></article>)}</div>}
-      </section>
-
-      {!!tieGroups.length && <section className="panel"><div className="head"><h2>Direkter Vergleich</h2><span>bei Punktgleichheit</span></div>{tieGroups.map(group => <div className="directGroup" key={group.map(team => team.name).join('|')}>{group.flatMap((a, index) => group.slice(index + 1).map(b => { const key = `${a.name}__${b.name}`; return <div className="directRow" key={key}><p><b>{a.name}</b><br />gegen<br /><b>{b.name}</b></p><select value={direct[key] || ''} onChange={event => setDirect(current => ({ ...current, [key]: event.target.value }))}><option value="">nicht festlegen</option><option value="a">{a.name} vorne</option><option value="b">{b.name} vorne</option></select></div> }))}</div>)}</section>}
     </main>
   )
 }
