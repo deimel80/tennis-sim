@@ -1,24 +1,14 @@
 # tennis-sim
 
-Version 4.0
+Version 4.1.0 stabil.
 
-## Features
-
-- Tabellen-Simulation
-- Saison-End-Prognose
-- realistische Monte-Carlo-Simulation
-- Stärke-Bewertung
-- PNG-Bildexport
+- Textimport
+- Spieltag-Simulation
+- Saison-Prognose
+- realistischere Streuung
+- PNG-Export
 - WhatsApp-Export
-- mobile Optimierung
-- GitHub Pages kompatibel
-
-## GitHub Pages
-
-Repository:
-`tennis-sim`
-
-## Start lokal
+- GitHub Pages: `/tennis-sim/`
 
 ```bash
 npm install
