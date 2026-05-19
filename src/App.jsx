@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import html2canvas from 'html2canvas'
 
-const APP_VERSION = '5.2.2'
+const APP_VERSION = '5.2.3'
 
 const exampleText = `Tabelle
  	Rang	Mannschaft	Begegnungen	S	U	N	Punkte	Matches	Sätze	Games
@@ -355,28 +355,52 @@ function simulateSeason(baseTeams, fixtures, maxMatches, iterations = 1000) {
   })
 }
 
-function expectedTeamPlan(teamName, teams, fixtures, maxMatches) {
+function buildGlobalExpectedPlan(teams, fixtures, maxMatches) {
   const simulatedTeams = teams.map(team => ({ ...team }))
-  const games = []
+  const plannedFixtures = []
 
-  fixtures.filter(fixture => fixture.status === 'open' && (fixture.home === teamName || fixture.away === teamName)).forEach(fixture => {
-    const result = expectedResult(fixture, simulatedTeams, maxMatches)
-    const score = pair(result)
-    const isHome = fixture.home === teamName
-    const ownMatches = score ? (isHome ? score[0] : score[1]) : 0
-    const oppMatches = score ? (isHome ? score[1] : score[0]) : 0
-    const points = ownMatches > oppMatches ? 2 : ownMatches < oppMatches ? 0 : 1
+  fixtures
+    .filter(fixture => fixture.status === 'open')
+    .forEach((fixture, index) => {
+      const result = expectedResult(fixture, simulatedTeams, maxMatches)
+      const score = pair(result)
+      const homeMatches = score ? score[0] : 0
+      const awayMatches = score ? score[1] : 0
 
-    games.push({
-      date: fixture.date || 'ohne Datum',
-      opponent: isHome ? fixture.away : fixture.home,
-      homeAway: isHome ? 'Heim' : 'Auswärts',
-      resultForTeam: score ? `${ownMatches}:${oppMatches}` : '',
-      points
+      plannedFixtures.push({
+        id: `${fixture.date || 'ohne Datum'}__${fixture.home}__${fixture.away}__${index}`,
+        date: fixture.date || 'ohne Datum',
+        home: fixture.home,
+        away: fixture.away,
+        result,
+        homeMatches,
+        awayMatches
+      })
+
+      if (result) applySingleFixture(simulatedTeams, fixture, result)
     })
 
-    if (result) applySingleFixture(simulatedTeams, fixture, result)
-  })
+  return plannedFixtures
+}
+
+function expectedTeamPlan(teamName, plannedFixtures) {
+  const games = plannedFixtures
+    .filter(fixture => fixture.home === teamName || fixture.away === teamName)
+    .map(fixture => {
+      const isHome = fixture.home === teamName
+      const ownMatches = isHome ? fixture.homeMatches : fixture.awayMatches
+      const oppMatches = isHome ? fixture.awayMatches : fixture.homeMatches
+      const points = ownMatches > oppMatches ? 2 : ownMatches < oppMatches ? 0 : 1
+
+      return {
+        date: fixture.date,
+        opponent: isHome ? fixture.away : fixture.home,
+        homeAway: isHome ? 'Heim' : 'Auswärts',
+        resultForTeam: `${ownMatches}:${oppMatches}`,
+        originalResult: fixture.result,
+        points
+      }
+    })
 
   return {
     games,
@@ -422,6 +446,7 @@ export default function App() {
 
   const visibleFixtures = fixtures.filter(fixture => fixture.status === 'open' && (selectedDay === 'alle' || fixtureDay(fixture.date) === selectedDay))
   const options = resultOptions(maxMatches)
+  const globalExpectedPlan = useMemo(() => buildGlobalExpectedPlan(teams, fixtures, maxMatches), [teams, fixtures, maxMatches])
 
   function parseText(text) {
     const parsed = parseLeagueText(text)
@@ -632,7 +657,7 @@ export default function App() {
           <span>1000 Simulationen</span>
         </div>
 
-        <p className="status">Version {APP_VERSION}: Sortierung nach Ø Tabellenpunkten, Ø Matchdifferenz und Ø gewonnenen Matches. Über „Restprogramm anzeigen“ siehst du die angenommenen Ergebnisse.</p>
+        <p className="status">Version {APP_VERSION}: Sortierung nach Ø Tabellenpunkten, Ø Matchdifferenz und Ø gewonnenen Matches. Über „Restprogramm anzeigen“ siehst du die global einmal berechneten Ergebnisse.</p>
 
         <div className="actionRow">
           <button onClick={simulateFullSeason}>Rest-Saison simulieren</button>
@@ -664,7 +689,7 @@ export default function App() {
                 {openDetailsFor === entry.name && (
                   <div className="projectionDetails">
                     {(() => {
-                      const details = expectedTeamPlan(entry.name, teams, fixtures, maxMatches)
+                      const details = expectedTeamPlan(entry.name, globalExpectedPlan)
 
                       return (
                         <>
