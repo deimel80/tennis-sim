@@ -344,6 +344,24 @@ function mostLikelyRank(entry) {
   return best ? Number(best[0]) : 0
 }
 
+function compareSeasonProjection(a, b, maxMatches) {
+  const strengthDiff = (b.baseStrength || 0) - (a.baseStrength || 0)
+  const avgDiff = a.avgRank - b.avgRank
+
+  // Die Stärke-Kennzahl ist die Plausibilitätsbremse.
+  // Wenn ein Team anhand Punkte/Matches/Sätze/Games klar stärker ist,
+  // darf Monte-Carlo-Rauschen es nicht hinter ein klar schwächeres Team sortieren.
+  if (Math.abs(strengthDiff) > 1.5) return strengthDiff
+
+  if (Math.abs(avgDiff) > 0.05) return avgDiff
+
+  const modalA = Number(Object.entries(a.rankCounts || {}).sort((x, y) => y[1] - x[1])[0]?.[0] || 999)
+  const modalB = Number(Object.entries(b.rankCounts || {}).sort((x, y) => y[1] - x[1])[0]?.[0] || 999)
+  if (modalA !== modalB) return modalA - modalB
+
+  return strengthDiff
+}
+
 function simulateRemainingSeason(baseTeams, fixtures, maxMatches, iterations = 1000) {
   const activeTeams = baseTeams.filter(team => !team.withdrawn)
   const resultMap = {}
@@ -570,7 +588,7 @@ export default function App() {
 
       <section className="panel">
         <div className="head"><h2>4. Saison-Prognose</h2><span>1000 Simulationen</span></div>
-        <p className="status">Simuliert alle offenen Begegnungen. Klare Kräfteverhältnisse streuen nur wenig, enge Spiele stärker.</p>
+        <p className="status">Simuliert alle offenen Begegnungen. Klare Kräfteverhältnisse streuen nur wenig, enge Spiele stärker. Die Sortierung nutzt die Stärke aus Punkten, Matches, Sätzen und Games als Plausibilitätsbremse.</p>
         <div className="actionRow"><button onClick={runSeasonSimulation}>Rest-Saison simulieren</button><button className="dark" onClick={() => setSeasonResults([])}>Prognose löschen</button></div>
         {!!seasonResults.length && <div className="seasonList">{seasonResults.map((entry, index) => <article className="seasonCard" key={entry.name}><div className="rank">{index + 1}</div><div className="teamBody"><h3>{entry.name}</h3><div className="stats"><span>häufigster Platz <b>{mostLikelyRank(entry)}</b></span><span>Ø Platz <b>{entry.avgRank.toFixed(1)}</b></span><span>Stärke <b>{entry.baseStrength.toFixed(1)}</b></span><span>Letzter <b>{formatPercent(entry.lastPct)}</b></span></div></div></article>)}</div>}
       </section>
