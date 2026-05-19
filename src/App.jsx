@@ -275,33 +275,6 @@ export default function App() {
     setStatus(result.count ? `${result.count} Begegnung(en) berechnet.` : 'Kein gültiges Ergebnis ausgewählt.')
   }
 
-
-  async function exportImage() {
-    if (!exportRef.current) return
-
-    const canvas = await html2canvas(exportRef.current, {
-      backgroundColor: '#ffffff',
-      scale: 2
-    })
-
-    const link = document.createElement('a')
-    link.download = 'tennis-sim.png'
-    link.href = canvas.toDataURL('image/png')
-    link.click()
-
-    setStatus('Bild exportiert.')
-  }
-
-  async function shareTable() {
-    const text = exportTableText(activeTeams, simulatedTeams.length ? 'Simulierte Tabelle' : 'Aktuelle Tabelle')
-    setExportText(text)
-
-    const result = await copyOrShareText(text)
-    setStatus(result)
-  }
-
-  return (
-
     <main className="app">
       <section className="hero">
         <p className="eyebrow">Tennis · Tabellen-Simulation</p>
